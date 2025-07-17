@@ -97,161 +97,178 @@ const ChangePassword: React.FC = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          Change Password
-        </h1>
-        <p className="text-sm sm:text-base text-gray-600">
-          Update your account password
-        </p>
-      </div>
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
+        {/* Enhanced Header */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5 rounded-2xl"></div>
+          <div className="relative bg-white/70 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-white/20 shadow-xl">
+            <div className="space-y-2">
+              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+                Change Password
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Update your account password, <span className="font-semibold text-blue-600">{user?.username || "User"}</span>.
+              </p>
+            </div>
+          </div>
+        </div>
 
-      <Card className="border-0 shadow-md max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold flex items-center">
-            <KeyRound className="h-5 w-5 mr-2 text-blue-600" />
-            Password Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        {/* Enhanced Alerts */}
+        <div className="space-y-4">
           {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+            <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
+              <AlertCircle className="h-5 w-5" />
+              <AlertDescription className="font-medium">{error}</AlertDescription>
             </Alert>
           )}
           {success && (
-            <Alert variant="default" className="border-green-500">
-              <CheckCircle className="h-4 w-4 text-green-500" />
-              <AlertDescription className="text-green-600">{success}</AlertDescription>
+            <Alert variant="default" className="border-0 shadow-lg bg-green-50/80 backdrop-blur-sm rounded-xl border-green-200">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
             </Alert>
           )}
+        </div>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="current-password"
-                className="text-sm font-medium text-gray-700"
-              >
-                Current Password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="current-password"
-                  type={showCurrentPassword ? "text" : "password"}
-                  placeholder="Enter current password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="h-11 pr-10"
-                  autoComplete="current-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-11 w-10 rounded-l-none"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+        {/* Enhanced Card */}
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden max-w-lg rounded-2xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+          <CardHeader className="relative border-b border-gray-100/50 bg-white/50">
+            <CardTitle className="text-xl font-bold flex items-center text-gray-800">
+              <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                <KeyRound className="h-5 w-5 text-white" />
+              </div>
+              Password Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="relative p-6 lg:p-8 space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label
+                  htmlFor="current-password"
+                  className="text-sm font-semibold text-gray-700 flex items-center"
                 >
-                  {showCurrentPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-500" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-500" />
-                  )}
-                </Button>
+                  <KeyRound className="h-4 w-4 mr-2 text-blue-500" />
+                  Current Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="current-password"
+                    type={showCurrentPassword ? "text" : "password"}
+                    placeholder="Enter current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all duration-200 pr-12"
+                    autoComplete="current-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-12 w-12 rounded-l-none"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-500" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="new-password"
+                  className="text-sm font-semibold text-gray-700 flex items-center"
+                >
+                  <KeyRound className="h-4 w-4 mr-2 text-purple-500" />
+                  New Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500/20 rounded-xl transition-all duration-200 pr-12"
+                    autoComplete="new-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-12 w-12 rounded-l-none"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-500" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="confirm-password"
+                  className="text-sm font-semibold text-gray-700 flex items-center"
+                >
+                  <KeyRound className="h-4 w-4 mr-2 text-blue-500" />
+                  Confirm New Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all duration-200 pr-12"
+                    autoComplete="new-password"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-12 w-12 rounded-l-none"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-500" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label
-                htmlFor="new-password"
-                className="text-sm font-medium text-gray-700"
-              >
-                New Password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="new-password"
-                  type={showNewPassword ? "text" : "password"}
-                  placeholder="Enter new password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="h-11 pr-10"
-                  autoComplete="new-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-11 w-10 rounded-l-none"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-500" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-500" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="confirm-password"
-                className="text-sm font-medium text-gray-700"
-              >
-                Confirm New Password
-              </Label>
-              <div className="relative">
-                <Input
-                  id="confirm-password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="h-11 pr-10"
-                  autoComplete="new-password"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-11 w-10 rounded-l-none"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-500" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-500" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleChangePassword}
-            disabled={isLoading}
-            className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Changing Password...
-              </div>
-            ) : (
-              <div className="flex items-center justify-center">
-                <KeyRound className="h-4 w-4 mr-2" />
-                Change Password
-              </div>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+            <Button
+              onClick={handleChangePassword}
+              disabled={isLoading}
+              className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+                  Changing Password...
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <KeyRound className="h-5 w-5 mr-2" />
+                  Change Password
+                </div>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

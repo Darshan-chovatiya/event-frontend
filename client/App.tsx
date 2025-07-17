@@ -17,6 +17,9 @@ import Settings from "./pages/Settings";
 import Events from "./pages/Events";
 import Stalls from "./pages/Stalls"; // Add this import
 import NotFound from "./pages/NotFound";
+import ExhibitorManagement from "./pages/ExhibitorManagement";
+import VisitorManagement from "./pages/VisitorManagement";
+import FaqManagement from "./pages/FaqManagement";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +52,30 @@ const App = () => (
                   <UserManagement />
                 </ProtectedRoute>
               } />
+              <Route
+            path="/exhibitors"
+            element={
+              <ProtectedRoute requireRole="super-admin">
+                <ExhibitorManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/visitors"
+            element={
+              <ProtectedRoute requireRole="super-admin">
+                <VisitorManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+                path="faqs"
+                element={
+                  <ProtectedRoute requireRole="super-admin">
+                    <FaqManagement />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="events" element={<Events />} />
               <Route path="stalls" element={<Stalls />} /> {/* Add this route */}
               <Route path="change-password" element={<ChangePassword />} />

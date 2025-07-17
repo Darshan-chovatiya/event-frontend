@@ -13,7 +13,9 @@ import {
   Bell,
   Calendar,
   Store,
+  FileText,
 } from "lucide-react";
+import Swal from "sweetalert2";
 
 const Layout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -23,7 +25,11 @@ const Layout: React.FC = () => {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     ...(user?.role === "super-admin"
-      ? [{ name: "User Management", href: "/users", icon: Users }]
+      ? [{ name: "User Management", href: "/users", icon: Users },
+        { name: "Exhibitor Management", href: "/exhibitors", icon: Users },
+        { name: "Visitor Management", href: "/visitors", icon: Users },
+        { name: "FAQ Management", href: "/faqs", icon: FileText },
+      ]
       : []),
     { name: "Events", href: "/events", icon: Calendar },
     { name: "Stalls", href: "/stalls", icon: Store }, // Add this navigation item
@@ -31,8 +37,27 @@ const Layout: React.FC = () => {
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
-  const handleLogout = () => {
-    logout();
+const handleLogout = () => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You will be logged out!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, logout!",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        Swal.fire({
+          title: 'Logged Out!',
+          text: 'You have been successfully logged out.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false
+        })
+      }
+    });
   };
 
   return (

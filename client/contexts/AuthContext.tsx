@@ -88,6 +88,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         username: data.data.admin.email, // Using email as username for frontend consistency
         email: data.data.admin.email,
         role: data.data.admin.role === "superadmin" ? "super-admin" : "sub-admin",
+        mobile: data.data.admin.mobile,
         avatar: data.data.admin.avatar || undefined, // Include avatar from login response
       };
 
