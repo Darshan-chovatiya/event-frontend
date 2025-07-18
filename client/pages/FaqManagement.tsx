@@ -54,10 +54,16 @@ interface Faq {
   isDeleted?: boolean;
 }
 
+interface Event {
+  _id: string;
+  name: string;
+}
+
 const FaqManagement: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [eventId, setEventId] = useState("");
@@ -75,6 +81,46 @@ const FaqManagement: React.FC = () => {
   });
 
   const types = ["general", "event"];
+
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch(`${BaseUrl}/admin/get-event-details`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+        body: JSON.stringify({
+          page: 1,
+          limit: 100, // Fetch a reasonable number of events
+          search: null,
+          fromDate: null,
+          toDate: null,
+          status: null,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setEvents(data.data.docs.map((event: any) => ({
+          _id: event._id,
+          name: event.name,
+        })));
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: data.message || "Failed to fetch events",
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Error fetching events",
+      });
+    }
+  };
 
   const fetchFaqs = async () => {
     setLoading(true);
@@ -136,6 +182,7 @@ const FaqManagement: React.FC = () => {
   useEffect(() => {
     if (user?.role === "super-admin") {
       fetchFaqs();
+      fetchEvents();
     }
   }, [searchTerm, selectedType, eventId, pagination.page, user]);
 
@@ -362,13 +409,23 @@ const FaqManagement: React.FC = () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Input
-                placeholder="Event ID (optional)"
+              <Select
                 value={eventId}
-                onChange={(e) => setEventId(e.target.value)}
-                className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all duration-200"
+                onValueChange={(value) => setEventId(value === "all" ? "" : value)}
                 disabled={loading || selectedType === "general"}
-              />
+              >
+                <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl">
+                  <SelectValue placeholder="Select Event" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Events</SelectItem>
+                  {events.map((event) => (
+                    <SelectItem key={event._id} value={event._id}>
+                      {event.name} ({event._id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -551,13 +608,14 @@ const FaqManagement: React.FC = () => {
                     disabled={loading}
                   />
                 </div>
+                {editingIndex !== null ? "" : 
                 <div className="space-y-2">
                   <Label htmlFor="type" className="text-sm font-semibold text-gray-700">
                     Type
                   </Label>
                   <Select
                     value={newFaq.type}
-                    onValueChange={(value: "general" | "event") => setNewFaq({ ...newFaq, type: value })}
+                    onValueChange={(value: "general" | "event") => setNewFaq({ ...newFaq, type: value, eventId: value === "general" ? "" : newFaq.eventId })}
                     disabled={loading}
                   >
                     <SelectTrigger className="h-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500/20 rounded-xl">
@@ -572,19 +630,28 @@ const FaqManagement: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+}
                 {newFaq.type === "event" && (
                   <div className="space-y-2">
                     <Label htmlFor="eventId" className="text-sm font-semibold text-gray-700">
-                      Event ID
+                      Event
                     </Label>
-                    <Input
-                      id="eventId"
+                    <Select
                       value={newFaq.eventId}
-                      onChange={(e) => setNewFaq({ ...newFaq, eventId: e.target.value })}
-                      placeholder="Enter Event ID"
-                      className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl"
+                      onValueChange={(value) => setNewFaq({ ...newFaq, eventId: value })}
                       disabled={loading}
-                    />
+                    >
+                      <SelectTrigger className="h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl">
+                        <SelectValue placeholder="Select Event" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {events.map((event) => (
+                          <SelectItem key={event._id} value={event._id}>
+                            {event.name} ({event._id})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
                 <Button
@@ -654,7 +721,7 @@ const FaqManagement: React.FC = () => {
                 onClick={handleSubmitFaqs}
                 disabled={loading || pendingFaqs.length === 0}
                 className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
-              >
+                >
                 {loading ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
