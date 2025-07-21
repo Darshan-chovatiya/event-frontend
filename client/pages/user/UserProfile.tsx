@@ -42,7 +42,7 @@ const UserProfile: React.FC = () => {
         throw new Error("No authentication token found");
       }
 
-      const response = await fetch(`${BaseUrl}/${user?.role}/updateProfile`, {
+      const response = await fetch(`${BaseUrl}/user/updateProfile`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

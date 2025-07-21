@@ -409,7 +409,7 @@ const ExhibitorManagement: React.FC = () => {
                                     : "bg-red-100 text-red-800 border-red-200"
                                 }`}
                               >
-                                {exhibitor.status.charAt(0).toUpperCase() + exhibitor.status.slice(1)}
+                                {exhibitor?.status?.charAt(0).toUpperCase() + exhibitor?.status?.slice(1)}
                               </Badge>
                             </div>
                           </div>

@@ -23,18 +23,18 @@ const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     ...(user?.role === "super-admin"
-      ? [{ name: "User Management", href: "/users", icon: Users },
-        { name: "Exhibitor Management", href: "/exhibitors", icon: Users },
-        { name: "Visitor Management", href: "/visitors", icon: Users },
-        { name: "FAQ Management", href: "/faqs", icon: FileText },
+      ? [{ name: "User Management", href: "/admin/users", icon: Users },
+        { name: "Exhibitor Management", href: "/admin/exhibitors", icon: Users },
+        { name: "Visitor Management", href: "/admin/visitors", icon: Users },
+        { name: "FAQ Management", href: "/admin/faqs", icon: FileText },
       ]
       : []),
-    { name: "Events", href: "/events", icon: Calendar },
-    { name: "Stalls", href: "/stalls", icon: Store }, // Add this navigation item
-    { name: "Change Password", href: "/change-password", icon: KeyRound },
-    { name: "Settings", href: "/settings", icon: Settings },
+    { name: "Events", href: "/admin/events", icon: Calendar },
+    { name: "Stalls", href: "/admin/stalls", icon: Store }, // Add this navigation item
+    { name: "Change Password", href: "/admin/change-password", icon: KeyRound },
+    { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
 const handleLogout = () => {

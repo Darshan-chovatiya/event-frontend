@@ -36,8 +36,10 @@ const UserDashboard: React.FC = () => {
         throw new Error("No authentication token found");
       }
 
-      const response = await fetch(`${BaseUrl}/${user.role}/whoAmI`, {
+      const response = await fetch(`${BaseUrl}/user/whoAmI`, {
+        method: "POST",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });

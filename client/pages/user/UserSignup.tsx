@@ -33,7 +33,7 @@ const UserSignup: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${BaseUrl}/${role}/register`, {
+      const response = await fetch(`${BaseUrl}/user/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

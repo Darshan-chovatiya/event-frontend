@@ -46,7 +46,7 @@ const UserChangePassword: React.FC = () => {
         throw new Error("No authentication token found");
       }
 
-      const response = await fetch(`${BaseUrl}/${user?.role}/change-password`, {
+      const response = await fetch(`${BaseUrl}/user/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
