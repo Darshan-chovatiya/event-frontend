@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useUserAuth } from "../contexts/UserAuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, User, KeyRound, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, User, KeyRound, LogOut, Menu, X, Store } from "lucide-react";
 import Swal from "sweetalert2";
 
 const UserLayout: React.FC = () => {
@@ -12,6 +12,7 @@ const UserLayout: React.FC = () => {
 
   const navigation = [
     { name: "Dashboard", href: "/user/dashboard", icon: LayoutDashboard },
+    { name: "Stalls", href: "/user/stalls", icon: Store },
     { name: "Profile", href: "/user/profile", icon: User },
     { name: "Change Password", href: "/user/change-password", icon: KeyRound },
   ];
