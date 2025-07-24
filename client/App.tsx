@@ -30,6 +30,9 @@ import UserDashboard from "./pages/user/UserDashboard";
 import UserProfile from "./pages/user/UserProfile";
 import UserChangePassword from "./pages/user/UserChangePassword";
 import UserStalls from "./pages/user/UserStalls";
+import BookingHistory from "./pages/user/BookingHistory";
+import ExhibitorPage from "./pages/user/ExhibitorPage";
+import VisitorPage from "./pages/user/VisitorPage";
 
 const queryClient = new QueryClient();
 
@@ -125,7 +128,10 @@ const App = () => (
                     <Route path="dashboard" element={<UserDashboard />} />
                     <Route path="stalls" element={<UserStalls />} />
                     <Route path="profile" element={<UserProfile />} />
-                    <Route path="change-password" element={<UserChangePassword />} />
+                    <Route path="exhibitors" element={<ExhibitorPage />} /> {/* Add this route */}
+                    <Route path="visitors" element={<VisitorPage />} /> {/* Add this route */}
+                    {/* <Route path="change-password" element={<UserChangePassword />} /> */}
+                    <Route path="bookinghistory" element={<BookingHistory />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>

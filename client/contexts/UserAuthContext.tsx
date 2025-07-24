@@ -15,6 +15,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string, userType: "exhibitor" | "visitor") => Promise<boolean>;
+  googleLogin: (credential: string, userType: "exhibitor" | "visitor") => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
   setUser: (user: User | null) => void;
@@ -76,13 +77,13 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
 
       const data = await response.json();
       const userData: User = {
-        id: data.data.admin._id,
-        email: data.data.admin.email,
-        name: data.data.admin.name,
-        mobile: data.data.admin.mobile,
-        companyName: data.data.admin.companyName || undefined,
+        id: data.data.user._id,
+        email: data.data.user.email,
+        name: data.data.user.name,
+        mobile: data.data.user.mobile,
+        companyName: data.data.user.companyName || undefined,
         role: userType,
-        avatar: data.data.admin.profileImage || undefined,
+        avatar: data.data.user.profileImage || undefined,
       };
 
       localStorage.setItem("userToken", data.data.accessToken);
@@ -91,6 +92,53 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
       return true;
     } catch (error: any) {
       console.error(`${userType} login error:`, error.message);
+      throw error;
+    }
+  };
+
+  const googleLogin = async (credential: string, userType: "exhibitor" | "visitor"): Promise<boolean> => {
+    try {
+      // Decode the Google JWT to extract email
+      const payload = JSON.parse(atob(credential.split(".")[1]));
+      const email = payload.email;
+
+      const response = await fetch(`${BaseUrl}/user/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          socialMediaId: credential,
+          userType,
+          signupType: "Google",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Google login failed");
+      }
+
+      const data = await response.json();
+      console.log(data,"daaaatatatattatat");
+      
+      const userData: User = {
+        id: data.data.user._id,
+        email: data.data.user.email,
+        name: data.data.user.name,
+        mobile: data.data.user.mobile,
+        companyName: data.data.user.companyName || undefined,
+        role: userType,
+        avatar: data.data.user.profileImage || undefined,
+      };
+
+      localStorage.setItem("userToken", data.data.accessToken);
+      localStorage.setItem("userData", JSON.stringify(userData));
+      setUser(userData);
+      return true;
+    } catch (error: any) {
+      console.error(`${userType} Google login error:`, error.message);
       throw error;
     }
   };
@@ -105,6 +153,7 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
     user,
     isAuthenticated: !!user,
     login,
+    googleLogin,
     logout,
     isLoading,
     setUser,
@@ -112,4 +161,3 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
 
   return <UserAuthContext.Provider value={value}>{children}</UserAuthContext.Provider>;
 };
-
