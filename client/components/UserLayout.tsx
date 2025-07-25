@@ -15,8 +15,8 @@ const UserLayout: React.FC = () => {
     { name: "Events", href: "/user/stalls", icon: Store },
     { name: "Exhibitors", href: "/user/exhibitors", icon: Building2 }, // Add this
     { name: "Visitors", href: "/user/visitors", icon: Users }, // Add this
+    { name: "Leads", href: "/user/leads", icon: Users },
     { name: "Profile", href: "/user/profile", icon: User },
-    // { name: "Change Password", href: "/user/change-password", icon: KeyRound },
   ];
 
   const handleLogout = () => {
@@ -48,7 +48,7 @@ const UserLayout: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Topbar for large and larger screens */}
       <div className="hidden lg:flex bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl z-50 sticky top-0">
-        <div className="flex h-16  items-center justify-between px-6 w-full border-b border-slate-700/50">
+        <div className="flex h-16  items-center justify-between px-6 py-10 w-full border-b border-slate-700/50">
           <div className="flex items-center space-x-3">
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-2 ring-slate-600">
                 <span className="text-sm font-semibold text-white">

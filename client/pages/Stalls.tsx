@@ -17,6 +17,7 @@ import {
   Filter,
   ChevronDown,
   ChevronUp,
+  User,
 } from "lucide-react";
 import { BaseUrl } from "@/sevice/Url";
 import { useToast } from "@/components/ui/use-toast";
@@ -30,6 +31,7 @@ interface Stall {
   status: "pending" | "reserved" | "confirmed" | "cancelled";
   paymentStatus: "pending" | "completed" | "failed";
   features: string[];
+  applications?: { exhibitorId: { _id: string; name: string; email: string }; status: string }[];
 }
 
 interface Booth {
@@ -44,10 +46,16 @@ interface Booth {
   stalls: Stall[];
 }
 
+interface Event {
+  _id: string;
+  name: string;
+}
+
 const Stalls: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [booths, setBooths] = useState<Booth[]>([]);
+  const [stallRequests, setStallRequests] = useState<Stall[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -57,35 +65,34 @@ const Stalls: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentBoothId, setCurrentBoothId] = useState<string | null>(null);
-  const [eventOptions, setEventOptions] = useState<{ _id: string; name: string }[]>([]);
+  const [eventOptions, setEventOptions] = useState<Event[]>([]);
+  const [activeTab, setActiveTab] = useState<"booths" | "requests">("booths");
 
   useEffect(() => {
-  const fetchEvents = async () => {
-    try {
-      const token = localStorage.getItem("adminToken");
-      const response = await fetch(`${BaseUrl}/admin/get-event-Ids`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok && data.data) {
-        setEventOptions(data.data); // List of { _id, name }
-      } else {
-        toast({ variant: "destructive", title: "Error", description: data.message || "Failed to fetch events" });
+    const fetchEvents = async () => {
+      try {
+        const token = localStorage.getItem("adminToken");
+        const response = await fetch(`${BaseUrl}/admin/get-event-Ids`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (response.ok && data.data) {
+          setEventOptions(data.data);
+        } else {
+          toast({ variant: "destructive", title: "Error", description: data.message || "Failed to fetch events" });
+        }
+      } catch (err: any) {
+        toast({ variant: "destructive", title: "Error", description: err.message });
       }
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Error", description: err.message });
-    }
-  };
+    };
 
-  fetchEvents();
-}, []);
+    fetchEvents();
+  }, []);
 
-
-  // Form state
   const [formData, setFormData] = useState({
     name: "",
     eventId: "",
@@ -104,7 +111,6 @@ const Stalls: React.FC = () => {
     totalPages: 1,
   });
 
-  
   const fetchBooths = async () => {
     setLoading(true);
     setError("");
@@ -140,9 +146,43 @@ const Stalls: React.FC = () => {
     }
   };
 
+  const fetchStallRequests = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) throw new Error("No authentication token found");
+
+      const response = await fetch(`${BaseUrl}/admin/get-stall-request`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to fetch stall requests");
+
+      setStallRequests(data.data || []);
+      setSuccess(data.message || "Stall requests loaded successfully");
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch stall requests");
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (isAuthenticated) fetchBooths();
-  }, [isAuthenticated, search, eventId, pagination.page]);
+    if (isAuthenticated) {
+      if (activeTab === "booths") {
+        fetchBooths();
+      } else {
+        fetchStallRequests();
+      }
+    }
+  }, [isAuthenticated, search, eventId, pagination.page, activeTab]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
     const { name, value } = e.target;
@@ -285,7 +325,7 @@ const Stalls: React.FC = () => {
       location: booth.location,
       status: booth.status,
       stalls: booth.stalls.map((stall) => ({
-        _id: stall._id, 
+        _id: stall._id,
         stallNumber: stall.stallNumber,
         location: stall.location,
         description: stall.description,
@@ -329,10 +369,41 @@ const Stalls: React.FC = () => {
     }
   };
 
+  const handleApplicationStatusUpdate = async (stallId: string, exhibitorId: string, status: "accepted" | "rejected") => {
+    setLoading(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) throw new Error("No authentication token found");
+
+      const response = await fetch(`${BaseUrl}/admin/update-stall-application-status`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ stallId, exhibitorId, status }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update application status");
+
+      setSuccess(data.message || "Application status updated successfully");
+      toast({ title: "Success", description: data.message });
+      fetchStallRequests();
+    } catch (err: any) {
+      setError(err.message || "Failed to update application status");
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case "approved":
       case "confirmed":
+      case "accepted":
         return "bg-green-100 text-green-800 border-green-200";
       case "pending":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
@@ -361,79 +432,104 @@ const Stalls: React.FC = () => {
                 Manage booths and stalls for your events, <span className="font-semibold text-blue-600">{user?.username}</span>.
               </p>
             </div>
-            <Button
-              onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
-            >
-              <PlusCircle className="h-5 w-5 mr-2" />
-              Add New Booth
-            </Button>
+            <div className="flex space-x-4">
+              <Button
+                onClick={() => setActiveTab("booths")}
+                className={`rounded-xl transition-all duration-300 ${
+                  activeTab === "booths"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
+                    : "bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 hover:border-gray-400"
+                }`}
+              >
+                Booths
+              </Button>
+              <Button
+                onClick={() => setActiveTab("requests")}
+                className={`rounded-xl transition-all duration-300 ${
+                  activeTab === "requests"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
+                    : "bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 hover:border-gray-400"
+                }`}
+              >
+                Stall Requests
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
-        <CardHeader className="relative border-b border-gray-100/50 bg-white/50">
-          <CardTitle className="text-xl font-bold flex items-center text-gray-800">
-            <Filter className="h-5 w-5 text-blue-500 mr-3" />
-            Search & Filter
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="relative p-6 lg:p-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="search" className="text-sm font-semibold text-gray-700 flex items-center">
-                <Search className="h-4 w-4 mr-2 text-blue-500" />
-                Search Booths
-              </Label>
-              <Input
-                id="search"
-                placeholder="Search by hall or category..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-12 rounded-xl"
-              />
+      {activeTab === "booths" && (
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+          <CardHeader className="relative border-b border-gray-100/50 bg-white/50">
+            <CardTitle className="text-xl font-bold flex items-center text-gray-800">
+              <Filter className="h-5 w-5 text-blue-500 mr-3" />
+              Search & Filter
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="relative p-6 lg:p-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="search" className="text-sm font-semibold text-gray-700 flex items-center">
+                  <Search className="h-4 w-4 mr-2 text-blue-500" />
+                  Search Booths
+                </Label>
+                <Input
+                  id="search"
+                  placeholder="Search by hall or category..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-12 rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="eventId" className="text-sm font-semibold text-gray-700 flex items-center">
+                  <Store className="h-4 w-4 mr-2 text-purple-500" />
+                  Event
+                </Label>
+                <Select
+                  value={eventId}
+                  onValueChange={(value) => {
+                    setEventId(value);
+                    setPagination({ ...pagination, page: 1 });
+                  }}
+                >
+                  <SelectTrigger className="h-12 rounded-xl">
+                    <SelectValue placeholder="Select an event" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {eventOptions.map((event) => (
+                      <SelectItem key={event._id} value={event._id}>
+                        {event.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                {/* <Button
+                  onClick={() => setPagination({ ...pagination, page: 1 })}
+                  disabled={loading}
+                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
+                >
+                  <Filter className="h-5 w-5 mr-2" />
+                  Apply Filters
+                </Button> */}
+                {activeTab === "booths" && (
+                <Button
+                  onClick={() => setShowAddModal(true)}
+                  className="bg-gradient-to-r ms-auto my-auto from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
+                >
+                  <PlusCircle className="h-5 w-5 mr-2" />
+                  Add New Booth
+                </Button>
+              )}
+              </div>
             </div>
-           <div className="space-y-2">
-  <Label htmlFor="eventId" className="text-sm font-semibold text-gray-700 flex items-center">
-    <Store className="h-4 w-4 mr-2 text-purple-500" />
-    Event
-  </Label>
-  <Select
-    value={eventId}
-    onValueChange={(value) => {
-      setEventId(value);
-      setPagination({ ...pagination, page: 1 }); // Reset to first page on filter
-    }}
-  >
-    <SelectTrigger className="h-12 rounded-xl">
-      <SelectValue placeholder="Select an event" />
-    </SelectTrigger>
-    <SelectContent>
-      {eventOptions.map((event) => (
-        <SelectItem key={event._id} value={event._id}>
-          {event.name}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-</div>
-
-            <div className="flex items-end">
-              <Button
-                onClick={() => setPagination({ ...pagination, page: 1 })}
-                disabled={loading}
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
-              >
-                <Filter className="h-5 w-5 mr-2" />
-                Apply Filters
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Alerts */}
       <div className="space-y-4">
@@ -452,98 +548,172 @@ const Stalls: React.FC = () => {
       </div>
 
       {/* Booths List */}
-      <div className="space-y-4">
-        {booths.map((booth) => (
-          <Card key={booth._id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-blue-50/30"></div>
-            <CardHeader className="relative border-b border-gray-100/50 bg-white/30">
-              <div className="flex justify-between items-center">
+      {activeTab === "booths" && (
+        <div className="space-y-4">
+          {booths.map((booth) => (
+            <Card key={booth._id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-blue-50/30"></div>
+              <CardHeader className="relative border-b border-gray-100/50 bg-white/30">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-xl font-bold flex items-center text-gray-800">
+                    <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                      <Store className="h-5 w-5 text-white" />
+                    </div>
+                    {booth.name}
+                  </CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(booth)}
+                      className="text-blue-600 hover:bg-blue-100 rounded-xl"
+                    >
+                      <Edit className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(booth._id, undefined)}
+                      className="text-red-600 hover:bg-red-100 rounded-xl"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setExpandedBooth(expandedBooth === booth._id ? null : booth._id)}
+                      className="text-gray-600 hover:bg-gray-100 rounded-xl"
+                    >
+                      {expandedBooth === booth._id ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  <span className="px-3"><span className="font-bold">Hall:</span> {booth.hall}</span>
+                  <span className="px-3"><span className="font-bold">Category:</span> {booth.category}</span>
+                  <span className="px-3"><span className="font-bold">Status:</span> <span className={`inline-block px-2 py-1 rounded-full ${getStatusColor(booth.status)}`}>{booth.status}</span></span>
+                </div>
+              </CardHeader>
+              {expandedBooth === booth._id && (
+                <CardContent className="relative p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-100 bg-gray-50/50">
+                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Stall Number</th>
+                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Location</th>
+                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Price</th>
+                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th>
+                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {booth.stalls.map((stall) => (
+                          <tr key={stall._id} className="hover:bg-blue-50/30">
+                            <td className="py-4 px-6 font-medium text-gray-900">{stall.stallNumber}</td>
+                            <td className="py-4 px-6 text-gray-800">{stall.location || "N/A"}</td>
+                            <td className="py-4 px-6 text-gray-800">${stall.price}</td>
+                            <td className="py-4 px-6">
+                              <Select
+                                value={stall.status}
+                                onValueChange={(value) => handleStatusUpdate(null, stall._id, value)}
+                              >
+                                <SelectTrigger className={`w-[120px] ${getStatusColor(stall.status)}`}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="reserved">Reserved</SelectItem>
+                                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="py-4 px-6">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(null, stall._id)}
+                                className="text-red-600 hover:bg-red-100 rounded-xl"
+                              >
+                                <Trash2 className="h-5 w-5" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Stall Requests List */}
+      {activeTab === "requests" && (
+        <div className="space-y-4">
+          {stallRequests.length === 0 && (
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
+              <CardContent className="p-6 text-center text-gray-600">
+                No pending stall requests found.
+              </CardContent>
+            </Card>
+          )}
+          {stallRequests.map((stall) => (
+            <Card key={stall._id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-blue-50/30"></div>
+              <CardHeader className="relative border-b border-gray-100/50 bg-white/30">
                 <CardTitle className="text-xl font-bold flex items-center text-gray-800">
                   <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
                     <Store className="h-5 w-5 text-white" />
                   </div>
-                  {booth.name}
+                  Stall: {stall.stallNumber}
                 </CardTitle>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(booth)}
-                    className="text-blue-600 hover:bg-blue-100 rounded-xl"
-                  >
-                    <Edit className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(booth._id, undefined)}
-                    className="text-red-600 hover:bg-red-100 rounded-xl"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setExpandedBooth(expandedBooth === booth._id ? null : booth._id)}
-                    className="text-gray-600 hover:bg-gray-100 rounded-xl"
-                  >
-                    {expandedBooth === booth._id ? (
-                      <ChevronUp className="h-5 w-5" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5" />
-                    )}
-                  </Button>
+                <div className="text-sm text-gray-600 mt-2">
+                  <span className="px-3"><span className="font-bold">Location:</span> {stall.location}</span>
+                  <span className="px-3"><span className="font-bold">Price:</span> ${stall.price}</span>
+                  <span className="px-3"><span className="font-bold">Status:</span> <span className={`inline-block px-2 py-1 rounded-full ${getStatusColor(stall.status)}`}>{stall.status}</span></span>
                 </div>
-              </div>
-              <div className="text-sm text-gray-600 mt-2">
-                <span className="px-3"> <span className="font-bold">Hall:</span> {booth.hall}</span>
-                <span className="px-3"> <span className="font-bold">Category:</span> {booth.category}</span>
-                <span className="px-3"> <span className="font-bold">Status:</span> <span className={`inline-block px-2 py-1 rounded-full ${getStatusColor(booth.status)}`}>{booth.status}</span></span>
-              </div>
-            </CardHeader>
-            {expandedBooth === booth._id && (
+              </CardHeader>
               <CardContent className="relative p-0">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50/50">
-                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Stall Number</th>
-                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Location</th>
-                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Price</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Exhibitor</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Email</th>
                         <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th>
                         <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {booth.stalls.map((stall) => (
-                        <tr key={stall._id} className="hover:bg-blue-50/30">
-                          <td className="py-4 px-6 font-medium text-gray-900">{stall.stallNumber}</td>
-                          <td className="py-4 px-6 text-gray-800">{stall.location || "N/A"}</td>
-                          <td className="py-4 px-6 text-gray-800">${stall.price}</td>
+                      {stall.applications?.map((app) => (
+                        <tr key={app.exhibitorId._id} className="hover:bg-blue-50/30">
+                          <td className="py-4 px-6 font-medium text-gray-900">{app.exhibitorId.name}</td>
+                          <td className="py-4 px-6 text-gray-800">{app.exhibitorId.email}</td>
                           <td className="py-4 px-6">
-                            <Select
-                              value={stall.status}
-                              onValueChange={(value) => handleStatusUpdate(null, stall._id, value)}
-                            >
-                              <SelectTrigger className={`w-[120px] ${getStatusColor(stall.status)}`}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="reserved">Reserved</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <span className={`inline-block px-2 py-1 rounded-full ${getStatusColor(app.status)}`}>{app.status}</span>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-4 px-6 flex space-x-2">
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(null, stall._id)}
-                              className="text-red-600 hover:bg-red-100 rounded-xl"
+                              onClick={() => handleApplicationStatusUpdate(stall._id, app.exhibitorId._id, "accepted")}
+                              disabled={loading || app.status !== "pending"}
+                              className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
                             >
-                              <Trash2 className="h-5 w-5" />
+                              Accept
+                            </Button>
+                            <Button
+                              onClick={() => handleApplicationStatusUpdate(stall._id, app.exhibitorId._id, "rejected")}
+                              disabled={loading || app.status !== "pending"}
+                              className="bg-red-600 hover:bg-red-700 text-white rounded-xl"
+                            >
+                              Reject
                             </Button>
                           </td>
                         </tr>
@@ -552,13 +722,13 @@ const Stalls: React.FC = () => {
                   </table>
                 </div>
               </CardContent>
-            )}
-          </Card>
-        ))}
-      </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
-      {showAddModal && (
+      {showAddModal && activeTab === "booths" && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center" style={{ marginTop: "0px" }}>
           <Card className="w-full max-w-2xl bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader className="border-b border-gray-100">
@@ -583,21 +753,20 @@ const Stalls: React.FC = () => {
                 <div className="space-y-2">
                   <Label htmlFor="eventId" className="text-sm font-semibold text-gray-700">Event ID</Label>
                   <Select
-  value={formData.eventId}
-  onValueChange={(value) => setFormData({ ...formData, eventId: value })}
->
-  <SelectTrigger className="h-12 rounded-xl">
-    <SelectValue placeholder="Select an event" />
-  </SelectTrigger>
-  <SelectContent>
-    {eventOptions.map((event) => (
-      <SelectItem key={event._id} value={event._id}>
-        {event.name}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-
+                    value={formData.eventId}
+                    onValueChange={(value) => setFormData({ ...formData, eventId: value })}
+                  >
+                    <SelectTrigger className="h-12 rounded-xl">
+                      <SelectValue placeholder="Select an event" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eventOptions.map((event) => (
+                        <SelectItem key={event._id} value={event._id}>
+                          {event.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="hall" className="text-sm font-semibold text-gray-700">Hall</Label>
@@ -661,7 +830,7 @@ const Stalls: React.FC = () => {
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-800">Stalls</h3>
+                  <h3 className="text-lg font-semibold text-gray-800">St Mello</h3>
                   <Button
                     onClick={addStallField}
                     className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl"

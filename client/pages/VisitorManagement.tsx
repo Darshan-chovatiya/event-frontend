@@ -111,7 +111,7 @@ const VisitorManagement: React.FC = () => {
           isDeleted: visitor.isDeleted || false,
         }));
 
-      setVisitors(mappedVisitors);
+      setVisitors(data.data.docs);
       setPagination({
         page: data.data.page,
         limit: data.data.limit,
@@ -228,14 +228,14 @@ const VisitorManagement: React.FC = () => {
         {/* Enhanced Filters Card */}
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
-          <CardHeader className="relative border-b border-gray-100/50 bg-white/50">
+          {/* <CardHeader className="relative border-b border-gray-100/50 bg-white/50">
             <CardTitle className="text-xl font-bold flex items-center text-gray-800">
               <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
                 <Filter className="h-5 w-5 text-white" />
               </div>
               Filters
             </CardTitle>
-          </CardHeader>
+          </CardHeader> */}
           <CardContent className="relative p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
@@ -281,14 +281,14 @@ const VisitorManagement: React.FC = () => {
         {/* Enhanced Visitors Table */}
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
-          <CardHeader className="relative border-b border-gray-100/50 bg-white/50">
+          {/* <CardHeader className="relative border-b border-gray-100/50 bg-white/50">
             <CardTitle className="text-xl font-bold flex items-center text-gray-800">
               <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
                 <User className="h-5 w-5 text-white" />
               </div>
               Visitors
             </CardTitle>
-          </CardHeader>
+          </CardHeader> */}
           <CardContent className="relative p-0">
             <div className="overflow-x-auto">
               <Table>
@@ -297,9 +297,9 @@ const VisitorManagement: React.FC = () => {
                     <TableHead className="py-4 px-6 lg:px- Evoq Technologies 8 text-sm font-bold text-gray-700 uppercase tracking-wider min-w-[200px]">
                       Visitor
                     </TableHead>
-                    <TableHead className="py-4 px-6 lg:px-8 text-sm font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
+                    {/* <TableHead className="py-4 px-6 lg:px-8 text-sm font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
                       Company
-                    </TableHead>
+                    </TableHead> */}
                     <TableHead className="py-4 px-6 lg:px-8 text-sm font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
                       Status
                     </TableHead>
@@ -367,14 +367,14 @@ const VisitorManagement: React.FC = () => {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">
+                      {/* <TableCell className="hidden sm:table-cell">
                         <Badge
                           variant="outline"
                           className="bg-blue-50 text-blue-700 border-blue-200"
                         >
                           {visitor.companyName}
                         </Badge>
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell className="hidden md:table-cell">
                         <div className="flex items-center space-x-2">
                           {visitor.status === "active" ? (

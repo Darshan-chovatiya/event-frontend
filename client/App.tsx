@@ -33,6 +33,7 @@ import UserStalls from "./pages/user/UserStalls";
 import BookingHistory from "./pages/user/BookingHistory";
 import ExhibitorPage from "./pages/user/ExhibitorPage";
 import VisitorPage from "./pages/user/VisitorPage";
+import LeadsPage from "./pages/user/LeadsPage";
 
 const queryClient = new QueryClient();
 
@@ -128,10 +129,10 @@ const App = () => (
                     <Route path="dashboard" element={<UserDashboard />} />
                     <Route path="stalls" element={<UserStalls />} />
                     <Route path="profile" element={<UserProfile />} />
-                    <Route path="exhibitors" element={<ExhibitorPage />} /> {/* Add this route */}
-                    <Route path="visitors" element={<VisitorPage />} /> {/* Add this route */}
-                    {/* <Route path="change-password" element={<UserChangePassword />} /> */}
+                    <Route path="exhibitors" element={<ExhibitorPage />} />
+                    <Route path="visitors" element={<VisitorPage />} />
                     <Route path="bookinghistory" element={<BookingHistory />} />
+                    <Route path="leads" element={<LeadsPage />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>

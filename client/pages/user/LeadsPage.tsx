@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUserAuth } from "../../contexts/UserAuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Users, Building2, AlertCircle, CheckCircle, Eye, Plus } from "lucide-react";
+import { Users, Building2, AlertCircle, CheckCircle, Eye } from "lucide-react";
 import { BaseUrl } from "@/sevice/Url";
-import Swal from "sweetalert2";
 
-interface Exhibitor {
-  _id: string;
+interface Lead {
+  id: string;
   name: string;
   email: string;
   companyName?: string;
   mobile?: string;
   status: string;
+  leadModel: "Exhibitor" | "Visitor";
+  capturedAt: string;
 }
 
 interface Stat {
@@ -22,16 +24,19 @@ interface Stat {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const ExhibitorPage: React.FC = () => {
+const LeadsPage: React.FC = () => {
   const { user } = useUserAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<Stat[]>([]);
-  const [exhibitors, setExhibitors] = useState<Exhibitor[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchExhibitors = async () => {
+  const fetchLeads = async () => {
     setError("");
     setSuccess("");
     setLoading(true);
@@ -48,14 +53,14 @@ const ExhibitorPage: React.FC = () => {
         throw new Error("No authentication token found");
       }
 
-      const response = await fetch(`${BaseUrl}/user/get-exhibitors`, {
+      const response = await fetch(`${BaseUrl}/user/get-lead`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          page: 1,
+          page,
           limit: 10,
           search: search || undefined,
         }),
@@ -63,86 +68,39 @@ const ExhibitorPage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch exhibitors");
+        throw new Error(errorData.message || "Failed to fetch leads");
       }
 
       const responseData = await response.json();
-      const exhibitorData = responseData.data.docs || [];
+      const leadData = responseData.data.docs || [];
 
       const newStats: Stat[] = [
         {
-          title: "Total Exhibitors",
+          title: "Total Leads",
           value: responseData.data.totalDocs || 0,
           icon: Users,
         },
         {
-          title: "Active Exhibitors",
-          value: exhibitorData.filter((e: Exhibitor) => e.status === "active").length,
+          title: "Exhibitor Leads",
+          value: leadData.filter((l: Lead) => l.leadModel === "Exhibitor").length,
           icon: Building2,
         },
       ];
 
       setStats(newStats);
-      setExhibitors(exhibitorData);
-      setSuccess("Exhibitors loaded successfully");
+      setLeads(leadData);
+      setTotalPages(responseData.data.totalPages || 1);
+      setSuccess("Leads loaded successfully");
     } catch (err: any) {
-      setError(err.message || "Failed to fetch exhibitors. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addLead = async (leadId: string) => {
-    console.log("Adding lead for exhibitor ID:", leadId);
-    
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    try {
-      const token = localStorage.getItem("userToken");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch(`${BaseUrl}/user/add-lead`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ leadId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to add lead");
-      }
-
-      setSuccess("Lead added successfully");
-      Swal.fire({
-        title: "Success!",
-        text: "Lead added successfully.",
-        icon: "success",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-    } catch (err: any) {
-      setError(err.message || "Failed to add lead. Please try again.");
-      Swal.fire({
-        title: "Error!",
-        text: err.message || "Failed to add lead. Please try again.",
-        icon: "error",
-        confirmButtonColor: "#3085d6",
-      });
+      setError(err.message || "Failed to fetch leads. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchExhibitors();
-  }, [user, search]);
+    fetchLeads();
+  }, [user, search, page]);
 
   const getStatColor = (index: number) => {
     const colors = [
@@ -170,16 +128,26 @@ const ExhibitorPage: React.FC = () => {
         <div className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5 rounded-2xl"></div>
           <div className="relative bg-white/70 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-white/20 shadow-xl">
-            <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-              Exhibitors
-            </h1>
-            <p className="text-gray-600 text-lg">
-              Browse all exhibitors, <span className="font-semibold text-blue-600">{user?.name || "User"}</span>!
-            </p>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+                  Leads
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  Browse all leads, <span className="font-semibold text-blue-600">{user?.name || "User"}</span>!
+                </p>
+              </div>
+              <Button
+                onClick={() => navigate("/user/exhibitors")}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+              >
+                Add Lead
+              </Button>
+            </div>
             <div className="mt-4">
               <input
                 type="text"
-                placeholder="Search exhibitors by name, email, or company..."
+                placeholder="Search leads by name, email, or company..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full max-w-md px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -230,14 +198,14 @@ const ExhibitorPage: React.FC = () => {
           })}
         </div>
 
-        {exhibitors.length > 0 && (
+        {leads.length > 0 && (
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
             <CardHeader className="border-b border-gray-100/50 bg-white/30">
               <CardTitle className="text-2xl font-bold flex items-center text-gray-800">
                 <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
                   <Eye className="h-5 w-5 text-white" />
                 </div>
-                Exhibitor List
+                Lead List
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -248,36 +216,35 @@ const ExhibitorPage: React.FC = () => {
                       <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Name</th>
                       <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Email</th>
                       <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Company</th>
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Type</th>
                       <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th>
-                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Action</th>
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Captured At</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {exhibitors.map((exhibitor) => (
-                      <tr key={exhibitor._id} className="hover:bg-blue-50/30">
+                    {leads.map((lead) => (
+                      <tr key={lead.id} className="hover:bg-blue-50/30">
                         <td className="py-4 px-6">
-                          <span className="font-medium text-gray-900">{exhibitor.name || "N/A"}</span>
+                          <span className="font-medium text-gray-900">{lead.name || "N/A"}</span>
                         </td>
                         <td className="py-4 px-6">
-                          <span className="font-medium text-gray-800">{exhibitor.email || "N/A"}</span>
+                          <span className="font-medium text-gray-800">{lead.email || "N/A"}</span>
                         </td>
                         <td className="py-4 px-6">
-                          <span className="font-medium text-gray-800">{exhibitor.companyName || "N/A"}</span>
+                          <span className="font-medium text-gray-800">{lead.companyName || "N/A"}</span>
                         </td>
                         <td className="py-4 px-6">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(exhibitor.status)}`}>
-                            {exhibitor.status || "N/A"}
+                          <span className="font-medium text-gray-800">{lead.leadModel || "N/A"}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lead.status)}`}>
+                            {lead.status || "N/A"}
                           </span>
                         </td>
                         <td className="py-4 px-6">
-                          <Button
-                            onClick={() => addLead(exhibitor._id)}
-                            disabled={loading}
-                            className="bg-blue-500 hover:bg-blue-600 text-white"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Lead
-                          </Button>
+                          <span className="font-medium text-gray-800">
+                            {new Date(lead.capturedAt).toLocaleDateString() || "N/A"}
+                          </span>
                         </td>
                       </tr>
                     ))}
@@ -287,9 +254,28 @@ const ExhibitorPage: React.FC = () => {
             </CardContent>
           </Card>
         )}
+
+        {leads.length > 0 && (
+          <div className="flex justify-between mt-4">
+            <Button
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              Previous
+            </Button>
+            <Button
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={page === totalPages}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default ExhibitorPage;
+export default LeadsPage;

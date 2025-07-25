@@ -40,6 +40,7 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { AmazonAws, BaseUrl } from "@/sevice/Url";
+import Swal from "sweetalert2";
 
 interface User {
   _id: string;
@@ -302,7 +303,18 @@ const UserManagement: React.FC = () => {
       });
       return;
     }
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+     const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'Do you want to delete this user? This action cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (!result.isConfirmed) return;
 
     setLoading(true);
     setError("");

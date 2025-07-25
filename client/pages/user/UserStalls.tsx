@@ -307,7 +307,7 @@ const UserStalls: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+    <div className=" bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
       <div className="p-4 sm:p-6 lg:p-8 mx-auto">
         {/* Hero Section */}
         <div className="relative overflow-hidden mb-8">
