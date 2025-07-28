@@ -1,6 +1,6 @@
 // export const BaseUrl = "https://event.itfuturz.in"
 // export const BaseUrl = "https://vtwfkr7c-3100.inc1.devtunnels.ms"
-export const BaseUrl = "https://wg7b08rk-3100.inc1.devtunnels.ms"
+export const BaseUrl = "http://localhost:3100"
 
 
 

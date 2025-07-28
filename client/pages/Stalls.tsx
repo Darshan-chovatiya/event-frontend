@@ -36,6 +36,7 @@ interface Stall {
 
 interface Booth {
   _id: string;
+  eventName: string;
   name: string;
   eventId: string;
   hall: string;
@@ -559,7 +560,7 @@ const Stalls: React.FC = () => {
                     <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
                       <Store className="h-5 w-5 text-white" />
                     </div>
-                    {booth.name}
+                    {booth.eventName} - {booth.name}
                   </CardTitle>
                   <div className="flex items-center space-x-2">
                     <Button
