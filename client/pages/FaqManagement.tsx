@@ -573,13 +573,13 @@ const FaqManagement: React.FC = () => {
 
         {/* Create/Update FAQ Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl max-w-lg">
-            <DialogHeader>
+          <DialogContent className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle className="text-lg font-bold text-gray-900">
                 {editingIndex !== null ? "Edit FAQ" : "Add FAQs"}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-6 p-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* FAQ Form */}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -630,7 +630,7 @@ const FaqManagement: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
-}
+                }
                 {newFaq.type === "event" && (
                   <div className="space-y-2">
                     <Label htmlFor="eventId" className="text-sm font-semibold text-gray-700">
@@ -667,13 +667,13 @@ const FaqManagement: React.FC = () => {
               {pendingFaqs.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-gray-700">Pending FAQs</h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                     {pendingFaqs.map((faq, index) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg border border-gray-200"
                       >
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1 mr-3">
                           <p className="text-sm font-medium text-gray-900 truncate">{faq.question}</p>
                           <p className="text-xs text-gray-500 truncate">{faq.answer}</p>
                           <div className="flex items-center space-x-2 mt-1">
@@ -691,7 +691,7 @@ const FaqManagement: React.FC = () => {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 flex-shrink-0">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -716,12 +716,15 @@ const FaqManagement: React.FC = () => {
                   </div>
                 </div>
               )}
-
+            </div>
+            
+            {/* Fixed Submit Button at Bottom */}
+            <div className="flex-shrink-0 p-6 pt-0 border-t border-gray-100">
               <Button
                 onClick={handleSubmitFaqs}
                 disabled={loading || pendingFaqs.length === 0}
                 className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
-                >
+              >
                 {loading ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>

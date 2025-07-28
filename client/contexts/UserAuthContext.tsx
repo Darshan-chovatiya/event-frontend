@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { BaseUrl } from "@/sevice/Url";
 
+interface SocialMedia {
+  facebook?: string;
+  twitter?: string;
+  linkedin?: string;
+}
+
 interface User {
   id: string;
   email: string;
@@ -9,6 +15,16 @@ interface User {
   companyName?: string;
   role: "exhibitor" | "visitor";
   avatar?: string;
+  designation?: string;
+  companyWebsite?: string;
+  bio?: string;
+  keywords?: string[];
+  insights?: string;
+  socialMedia?: SocialMedia;
+  focusSector?: string;
+  profileImage?: string;
+  coverImage?: string;
+  companyLogo?: string;
 }
 
 interface AuthContextType {
@@ -84,6 +100,20 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
         companyName: data.data.user.companyName || undefined,
         role: userType,
         avatar: data.data.user.profileImage || undefined,
+        designation: data.data.user.designation || undefined,
+        companyWebsite: data.data.user.companyWebsite || undefined,
+        bio: data.data.user.bio || undefined,
+        keywords: data.data.user.keywords || undefined,
+        insights: data.data.user.insights || undefined,
+        socialMedia: {
+          facebook: data.data.user.socialMedia?.facebook || undefined,
+          twitter: data.data.user.socialMedia?.twitter || undefined,
+          linkedin: data.data.user.socialMedia?.linkedin || undefined,
+        },
+        focusSector: data.data.user.focusSector || undefined,
+        profileImage: data.data.user.profileImage || undefined,
+        coverImage: data.data.user.coverImage || undefined,
+        companyLogo: data.data.user.companyLogo || undefined,
       };
 
       localStorage.setItem("userToken", data.data.accessToken);
@@ -121,7 +151,6 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
       }
 
       const data = await response.json();
-      console.log(data,"daaaatatatattatat");
       
       const userData: User = {
         id: data.data.user._id,
@@ -131,6 +160,20 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
         companyName: data.data.user.companyName || undefined,
         role: userType,
         avatar: data.data.user.profileImage || undefined,
+        designation: data.data.user.designation || undefined,
+        companyWebsite: data.data.user.companyWebsite || undefined,
+        bio: data.data.user.bio || undefined,
+        keywords: data.data.user.keywords || undefined,
+        insights: data.data.user.insights || undefined,
+        socialMedia: {
+          facebook: data.data.user.socialMedia?.facebook || undefined,
+          twitter: data.data.user.socialMedia?.twitter || undefined,
+          linkedin: data.data.user.socialMedia?.linkedin || undefined,
+        },
+        focusSector: data.data.user.focusSector || undefined,
+        profileImage: data.data.user.profileImage || undefined,
+        coverImage: data.data.user.coverImage || undefined,
+        companyLogo: data.data.user.companyLogo || undefined,
       };
 
       localStorage.setItem("userToken", data.data.accessToken);
