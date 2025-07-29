@@ -25,6 +25,7 @@ interface User {
   profileImage?: string;
   coverImage?: string;
   companyLogo?: string;
+  qrCode?: string;
 }
 
 interface AuthContextType {
@@ -114,6 +115,7 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
         profileImage: data.data.user.profileImage || undefined,
         coverImage: data.data.user.coverImage || undefined,
         companyLogo: data.data.user.companyLogo || undefined,
+        qrCode: data.data.user.qrCode || undefined,
       };
 
       localStorage.setItem("userToken", data.data.accessToken);
@@ -174,6 +176,7 @@ export const UserAuthProvider: React.FC<UserAuthProviderProps> = ({ children }) 
         profileImage: data.data.user.profileImage || undefined,
         coverImage: data.data.user.coverImage || undefined,
         companyLogo: data.data.user.companyLogo || undefined,
+        qrCode: data.data.user.qrCode || undefined,
       };
 
       localStorage.setItem("userToken", data.data.accessToken);
