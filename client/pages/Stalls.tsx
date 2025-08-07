@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
   User,
+  Calendar,
 } from "lucide-react";
 import { BaseUrl } from "@/sevice/Url";
 import { useToast } from "@/components/ui/use-toast";
@@ -551,6 +552,20 @@ const Stalls: React.FC = () => {
       {/* Booths List */}
       {activeTab === "booths" && (
         <div className="space-y-4">
+           {loading && (
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                          <p className="text-gray-500 font-medium">Loading booths...</p>
+                        </div>
+                  )}
+          {booths.length === 0 && !loading && (
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
+              <CardContent className="p-6 text-center text-gray-600">
+              No booths found.
+              </CardContent>
+
+            </Card>
+          )}
           {booths.map((booth) => (
             <Card key={booth._id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl">
               <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-blue-50/30"></div>

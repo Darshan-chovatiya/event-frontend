@@ -294,7 +294,7 @@ const ExhibitorManagement: React.FC = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="h-12 pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all duration-200"
-                    disabled={loading}
+                    // disabled={loading}
                   />
                 </div>
               </div>
@@ -360,132 +360,157 @@ const ExhibitorManagement: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {exhibitors.map((exhibitor) => (
-                    <TableRow key={exhibitor._id} className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors duration-200">
-                      <TableCell className="py-4 px-6 lg:px-8">
-                        <div className="flex items-center space-x-3">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-blue-500/20 group-hover:ring-blue-500/40 transition-all duration-200 flex-shrink-0">
-                            {exhibitor.profileImage ? (
-                              <img
-                                src={`${AmazonAws}/${exhibitor.profileImage}`}
-                                alt={exhibitor.name}
-                                className="h-full w-full rounded-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-sm font-medium text-blue-700">
-                                {exhibitor.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")}
-                              </span>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-base font-medium text-gray-900 truncate">
-                              {exhibitor.name}
-                            </p>
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Mail className="h-4 w-4 mr-1 flex-shrink-0 text-blue-500" />
-                              <span className="truncate">{exhibitor.email}</span>
-                            </div>
-                            {exhibitor.mobile && (
-                              <div className="flex items-center text-sm text-gray-500">
-                                <Phone className="h-4 w-4 mr-1 flex-shrink-0 text-purple-500" />
-                                <span className="truncate">{exhibitor.mobile}</span>
+                  {loading ? (
+                                  <TableRow>
+                                    <TableCell colSpan={5} className="py-6 text-center">
+                                      <div className="flex flex-col items-center justify-center space-y-2">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+                                        <p className="text-sm text-gray-600">Loading exhibitors...</p>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                ) : (
+                                  <>
+                                    {exhibitors.length === 0 ? (
+                                      <TableRow>
+                                        <TableCell colSpan={5} className="py-6 text-center">
+                                          <p className="text-sm text-gray-500">No exhibitors found</p>
+                                        </TableCell>
+                                      </TableRow>
+                                    ) : ( 
+                                      <>
+                        {exhibitors.map((exhibitor) => (
+                          <TableRow key={exhibitor._id} className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors duration-200">
+                            <TableCell className="py-4 px-6 lg:px-8">
+                              <div className="flex items-center space-x-3">
+                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center ring-2 ring-blue-500/20 group-hover:ring-blue-500/40 transition-all duration-200 flex-shrink-0">
+                                  {exhibitor.profileImage ? (
+                                    <img
+                                      src={`${AmazonAws}/${exhibitor.profileImage}`}
+                                      alt={exhibitor.name}
+                                      className="h-full w-full rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-sm font-medium text-blue-700">
+                                      {exhibitor.name
+                                        .split(" ")
+                                        .map((n) => n[0])
+                                        .join("")}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-base font-medium text-gray-900 truncate">
+                                    {exhibitor.name}
+                                  </p>
+                                  <div className="flex items-center text-sm text-gray-500">
+                                    <Mail className="h-4 w-4 mr-1 flex-shrink-0 text-blue-500" />
+                                    <span className="truncate">{exhibitor.email}</span>
+                                  </div>
+                                  {exhibitor.mobile && (
+                                    <div className="flex items-center text-sm text-gray-500">
+                                      <Phone className="h-4 w-4 mr-1 flex-shrink-0 text-purple-500" />
+                                      <span className="truncate">{exhibitor.mobile}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center space-x-2 mt-1 sm:hidden">
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
+                                    >
+                                      {exhibitor.companyName}
+                                    </Badge>
+                                    <Badge
+                                      variant={exhibitor.status === "active" ? "default" : "secondary"}
+                                      className={`text-xs ${
+                                        exhibitor.status === "active"
+                                          ? "bg-green-100 text-green-800 border-green-200"
+                                          : "bg-red-100 text-red-800 border-red-200"
+                                      }`}
+                                    >
+                                      {exhibitor?.status?.charAt(0).toUpperCase() + exhibitor?.status?.slice(1)}
+                                    </Badge>
+                                  </div>
+                                </div>
                               </div>
-                            )}
-                            <div className="flex items-center space-x-2 mt-1 sm:hidden">
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell">
                               <Badge
                                 variant="outline"
-                                className="bg-blue-50 text-blue-700 border-blue-200 text-xs"
+                                className="bg-blue-50 text-blue-700 border-blue-200"
                               >
                                 {exhibitor.companyName}
                               </Badge>
-                              <Badge
-                                variant={exhibitor.status === "active" ? "default" : "secondary"}
-                                className={`text-xs ${
-                                  exhibitor.status === "active"
-                                    ? "bg-green-100 text-green-800 border-green-200"
-                                    : "bg-red-100 text-red-800 border-red-200"
-                                }`}
-                              >
-                                {exhibitor?.status?.charAt(0).toUpperCase() + exhibitor?.status?.slice(1)}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Badge
-                          variant="outline"
-                          className="bg-blue-50 text-blue-700 border-blue-200"
-                        >
-                          {exhibitor.companyName}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="flex items-center space-x-2">
-                          {exhibitor.status === "active" ? (
-                            <UserCheck className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <UserX className="h-4 w-4 text-red-600" />
-                          )}
-                          <Select
-                            value={exhibitor.status}
-                            onValueChange={(value: "active" | "inActive") =>
-                              handleStatusUpdate(exhibitor._id, value)
-                            }
-                            disabled={loading}
-                          >
-                            <SelectTrigger
-                              className={`w-[100px] h-10 rounded-xl ${
-                                exhibitor.status === "active"
-                                  ? "bg-green-100 text-green-800 border-green-200"
-                                  : "bg-red-100 text-red-800 border-red-200"
-                              }`}
-                            >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {statuses.map((status) => (
-                                <SelectItem key={status} value={status}>
-                                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-gray-600 hidden lg:table-cell">
-                        {new Date(exhibitor.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDownloadMedia(exhibitor._id, exhibitor.name)}
-                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
-                            disabled={loading}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteExhibitor(exhibitor._id)}
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl"
-                            disabled={loading}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <div className="flex items-center space-x-2">
+                                {exhibitor.status === "active" ? (
+                                  <UserCheck className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <UserX className="h-4 w-4 text-red-600" />
+                                )}
+                                <Select
+                                  value={exhibitor.status}
+                                  onValueChange={(value: "active" | "inActive") =>
+                                    handleStatusUpdate(exhibitor._id, value)
+                                  }
+                                  disabled={loading}
+                                >
+                                  <SelectTrigger
+                                    className={`w-[100px] h-10 rounded-xl ${
+                                      exhibitor.status === "active"
+                                        ? "bg-green-100 text-green-800 border-green-200"
+                                        : "bg-red-100 text-red-800 border-red-200"
+                                    }`}
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {statuses.map((status) => (
+                                      <SelectItem key={status} value={status}>
+                                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-gray-600 hidden lg:table-cell">
+                              {new Date(exhibitor.createdAt).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDownloadMedia(exhibitor._id, exhibitor.name)}
+                                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                                  disabled={loading}
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDeleteExhibitor(exhibitor._id)}
+                                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl"
+                                  disabled={loading}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        </>
+                        )}
+                      </>
+                    )}
                 </TableBody>
               </Table>
             </div>
+
+            {!loading && exhibitors.length > 0 && (
             <div className="flex flex-col sm:flex-row justify-between items-center p-6 lg:p-8 gap-4">
               <Button
                 onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
@@ -505,6 +530,7 @@ const ExhibitorManagement: React.FC = () => {
                 Next
               </Button>
             </div>
+            )}
           </CardContent>
         </Card>
       </div>

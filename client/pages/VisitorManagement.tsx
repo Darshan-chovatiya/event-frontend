@@ -246,7 +246,7 @@ const VisitorManagement: React.FC = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="h-12 pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all duration-200"
-                    disabled={loading}
+                    // disabled={loading}
                   />
                 </div>
               </div>
@@ -312,6 +312,25 @@ const VisitorManagement: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-6 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+                      <p className="text-sm text-gray-600">Loading visitors...</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <>
+                  {visitors.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-6 text-center">
+                        <p className="text-sm text-gray-500">No visitors found</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : ( 
+                    <>                  
                   {visitors.map((visitor) => (
                     <TableRow key={visitor._id} className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors duration-200">
                       <TableCell className="py-4 px-6 lg:px-8">
@@ -426,9 +445,15 @@ const VisitorManagement: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ))}
+                  </>
+                        )}
+                      </>
+                    )}
                 </TableBody>
               </Table>
             </div>
+
+            {!loading && visitors.length > 0 && (
             <div className="flex flex-col sm:flex-row justify-between items-center p-6 lg:p-8 gap-4">
               <Button
                 onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
@@ -448,6 +473,7 @@ const VisitorManagement: React.FC = () => {
                 Next
               </Button>
             </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -151,6 +151,21 @@ const VisitorPage: React.FC = () => {
           </Alert>
         )}
 
+        {loading && (
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+                          <p className="text-gray-500 font-medium">Loading visitors...</p>
+                        </div>
+                  )}
+          {visitors.length === 0 && !loading && (
+            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
+              <CardContent className="p-6 text-center text-gray-600">
+              No visitors found.
+              </CardContent>
+
+            </Card>
+          )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
           {stats.map((stat, index) => {
             const Icon = stat.icon;

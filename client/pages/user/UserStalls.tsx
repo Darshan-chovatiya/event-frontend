@@ -633,7 +633,7 @@ const UserStalls: React.FC = () => {
                                       </div>
 
                                       {/* Booth Details */}
-                                      <div className="bg-slate-50/70 rounded-2xl p-4 mb-4">
+                                      <div className="bg-slate-50/70 rounded-2xl p-4 mb-4 border border-slate-200">
                                         <h5 className="font-semibold text-slate-900 mb-2">Booth Information</h5>
                                         <div className="space-y-1 text-sm text-slate-600">
                                           <p><span className="font-medium">Name:</span> {booth.name}</p>

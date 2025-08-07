@@ -550,11 +550,11 @@ const UserManagement: React.FC = () => {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
-                  disabled={loading}
+                  // disabled={loading}
                 />
               </div>
             </div>
-            <Select
+            {/* <Select
               value={selectedRole}
               onValueChange={setSelectedRole}
               disabled={loading}
@@ -570,7 +570,7 @@ const UserManagement: React.FC = () => {
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </Select> */}
             <Select
               value={selectedStatus}
               onValueChange={setSelectedStatus}
@@ -624,126 +624,152 @@ const UserManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user._id} className="border-b border-gray-100">
-                    <TableCell className="py-3">
-                      <div className="flex items-center space-x-2 sm:space-x-3">
-                        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
-                          {user.avatar ? (
-                            <img
-                              src={`${AmazonAws}/${user.avatar}`}
-                              alt={user.name}
-                              className="h-full w-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-xs sm:text-sm font-medium text-white">
-                              {user.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </span>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm sm:text-base font-medium text-gray-900 truncate">
-                            {user.name}
-                          </p>
-                          <div className="flex items-center text-xs sm:text-sm text-gray-500">
-                            <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">{user.email}</span>
-                          </div>
-                          {user.mobile && (
-                            <div className="flex items-center text-xs sm:text-sm text-gray-500">
-                              <Phone className="h-3 w-3 mr-1 flex-shrink-0" />
-                              <span className="truncate">{user.mobile}</span>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-6 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent"></div>
+                      <p className="text-sm text-gray-600">Loading users...</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                <>
+                  {users.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-6 text-center">
+                        <p className="text-sm text-gray-500">No users found</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : ( 
+                    <>
+                    {users.map((user) => (
+                      <TableRow key={user._id} className="border-b border-gray-100">
+                        <TableCell className="py-3">
+                          <div className="flex items-center space-x-2 sm:space-x-3">
+                            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                              {user.avatar ? (
+                                <img
+                                  src={`${AmazonAws}/${user.avatar}`}
+                                  alt={user.name}
+                                  className="h-full w-full rounded-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-xs sm:text-sm font-medium text-white">
+                                  {user.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </span>
+                              )}
                             </div>
-                          )}
-                          <div className="flex items-center space-x-2 mt-1 sm:hidden">
-                            <Badge variant="outline" className="bg-gray-50 text-xs">
-                              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                            </Badge>
-                            <Badge
-                              variant={user.status === "active" ? "default" : "secondary"}
-                              className={`text-xs ${
-                                user.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                            </Badge>
+                            <div className="min-w-0">
+                              <p className="text-sm sm:text-base font-medium text-gray-900 truncate">
+                                {user.name}
+                              </p>
+                              <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                                <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
+                                <span className="truncate">{user.email}</span>
+                              </div>
+                              {user.mobile && (
+                                <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                                  <Phone className="h-3 w-3 mr-1 flex-shrink-0" />
+                                  <span className="truncate">{user.mobile}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center space-x-2 mt-1 sm:hidden">
+                                <Badge variant="outline" className="bg-gray-50 text-xs">
+                                  {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                                </Badge>
+                                <Badge
+                                  variant={user.status === "active" ? "default" : "secondary"}
+                                  className={`text-xs ${
+                                    user.status === "active"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                                </Badge>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant="outline" className="bg-gray-50">
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <div className="flex items-center space-x-2">
-                        {user.status === "active" ? (
-                          <UserCheck className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <UserX className="h-4 w-4 text-red-600" />
-                        )}
-                        <Select
-                          value={user.status}
-                          onValueChange={(value: "active" | "inActive") =>
-                            handleStatusUpdate(user._id, value)
-                          }
-                          disabled={loading || adminUser.id === user?._id}
-                        >
-                          <SelectTrigger
-                            className={`w-[100px] ${
-                              user.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {statuses.map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-gray-600 hidden lg:table-cell">
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end space-x-1 sm:space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(user)}
-                          className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          disabled={loading}
-                        >
-                          <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteUser(user._id)}
-                          className="h-7 w-7 sm:h-8 sm:w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          disabled={loading || adminUser.id === user?._id} 
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge variant="outline" className="bg-gray-50">
+                            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex items-center space-x-2">
+                            {user.status === "active" ? (
+                              <UserCheck className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <UserX className="h-4 w-4 text-red-600" />
+                            )}
+                            <Select
+                              value={user.status}
+                              onValueChange={(value: "active" | "inActive") =>
+                                handleStatusUpdate(user._id, value)
+                              }
+                              disabled={loading || adminUser.id === user?._id}
+                            >
+                              <SelectTrigger
+                                className={`w-[100px] ${
+                                  user.status === "active"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {statuses.map((status) => (
+                                  <SelectItem key={status} value={status}>
+                                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-600 hidden lg:table-cell">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end space-x-1 sm:space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(user)}
+                              className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              disabled={loading}
+                            >
+                              <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteUser(user._id)}
+                              className="h-7 w-7 sm:h-8 sm:w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              disabled={loading || adminUser.id === user?._id} 
+                            >
+                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    </>
+                  )}
+                </>
+              )}
               </TableBody>
             </Table>
           </div>
+          
+          {/* {!loading &&  (  */}
+          {!loading && users.length > 0 && (
           <div className="flex justify-between items-center p-4">
             <Button
               onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
@@ -763,6 +789,7 @@ const UserManagement: React.FC = () => {
               Next
             </Button>
           </div>
+          )}
         </CardContent>
       </Card>
 
@@ -799,7 +826,7 @@ const UserManagement: React.FC = () => {
                 disabled={loading}
               />
             </div>
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="edit-password">Password (optional)</Label>
               <Input
                 id="edit-password"
@@ -809,7 +836,7 @@ const UserManagement: React.FC = () => {
                 placeholder="Enter new password (leave blank to keep current)"
                 disabled={loading}
               />
-            </div>
+            </div> */}
             <div className="space-y-2">
               <Label htmlFor="edit-mobile">Mobile *</Label>
               <Input
