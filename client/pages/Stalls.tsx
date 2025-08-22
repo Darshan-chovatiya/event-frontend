@@ -15,10 +15,6 @@ import {
   AlertCircle,
   CheckCircle,
   Filter,
-  ChevronDown,
-  ChevronUp,
-  User,
-  Calendar,
 } from "lucide-react";
 import { BaseUrl } from "@/sevice/Url";
 import { useToast } from "@/components/ui/use-toast";
@@ -29,23 +25,13 @@ interface Stall {
   location: string;
   description: string;
   price: number;
+  category: string;
   status: "pending" | "reserved" | "confirmed" | "cancelled";
   paymentStatus: "pending" | "completed" | "failed";
   features: string[];
-  applications?: { exhibitorId: { _id: string; name: string; email: string }; status: string }[];
-}
-
-interface Booth {
-  _id: string;
   eventName: string;
-  name: string;
   eventId: string;
-  hall: string;
-  category: string;
-  description: string;
-  location: string;
-  status: string;
-  stalls: Stall[];
+  applications?: { exhibitorId: { _id: string; name: string; email: string }; status: string }[];
 }
 
 interface Event {
@@ -56,19 +42,37 @@ interface Event {
 const Stalls: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const [booths, setBooths] = useState<Booth[]>([]);
+  const [stalls, setStalls] = useState<Stall[]>([]);
   const [stallRequests, setStallRequests] = useState<Stall[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [search, setSearch] = useState("");
   const [eventId, setEventId] = useState("");
-  const [expandedBooth, setExpandedBooth] = useState<string | null>(null);
+  const [category, setCategory] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentBoothId, setCurrentBoothId] = useState<string | null>(null);
+  const [currentStallId, setCurrentStallId] = useState<string | null>(null);
   const [eventOptions, setEventOptions] = useState<Event[]>([]);
-  const [activeTab, setActiveTab] = useState<"booths" | "requests">("booths");
+  const [activeTab, setActiveTab] = useState<"stalls" | "requests">("stalls");
+
+  const [formData, setFormData] = useState({
+    stallNumber: "",
+    eventId: "",
+    location: "",
+    description: "",
+    price: 0,
+    category: "",
+    status: "pending",
+    features: [] as string[],
+  });
+
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -95,25 +99,7 @@ const Stalls: React.FC = () => {
     fetchEvents();
   }, []);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    eventId: "",
-    hall: "",
-    category: "",
-    description: "",
-    location: "",
-    status: "open",
-    stalls: [{ stallNumber: "", location: "", description: "", price: 0, status: "pending", features: [] }],
-  });
-
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 1,
-  });
-
-  const fetchBooths = async () => {
+  const fetchStalls = async () => {
     setLoading(true);
     setError("");
     try {
@@ -126,22 +112,22 @@ const Stalls: React.FC = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ search, eventId, page: pagination.page, limit: pagination.limit }),
+        body: JSON.stringify({ search, eventId, category, page: pagination.page, limit: pagination.limit }),
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to fetch booths");
+      if (!response.ok) throw new Error(data.message || "Failed to fetch stalls");
 
-      setBooths(data.data.booths || []);
+      setStalls(data.data.stalls || []);
       setPagination({
         page: data.data.page,
         limit: data.data.limit,
         total: data.data.total,
         totalPages: data.data.totalPages,
       });
-      setSuccess(data.message || "Booths and stalls loaded successfully");
+      setSuccess(data.message || "Stalls loaded successfully");
     } catch (err: any) {
-      setError(err.message || "Failed to fetch booths");
+      setError(err.message || "Failed to fetch stalls");
       toast({ variant: "destructive", title: "Error", description: err.message });
     } finally {
       setLoading(false);
@@ -178,48 +164,26 @@ const Stalls: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (activeTab === "booths") {
-        fetchBooths();
+      if (activeTab === "stalls") {
+        fetchStalls();
       } else {
         fetchStallRequests();
       }
     }
-  }, [isAuthenticated, search, eventId, pagination.page, activeTab]);
+  }, [isAuthenticated, search, eventId, category, pagination.page, activeTab]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (index !== undefined) {
-      const newStalls = [...formData.stalls];
-      newStalls[index] = { ...newStalls[index], [name]: value };
-      setFormData({ ...formData, stalls: newStalls });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    setFormData({ ...formData, [name]: name === "price" ? Number(value) : value });
   };
 
-  const handleFeatureToggle = (feature: string, index: number) => {
-    const newStalls = [...formData.stalls];
-    const currentFeatures = newStalls[index].features;
+  const handleFeatureToggle = (feature: string) => {
+    const currentFeatures = formData.features;
     if (currentFeatures.includes(feature)) {
-      newStalls[index].features = currentFeatures.filter((f) => f !== feature);
+      setFormData({ ...formData, features: currentFeatures.filter((f) => f !== feature) });
     } else {
-      newStalls[index].features = [...currentFeatures, feature];
+      setFormData({ ...formData, features: [...currentFeatures, feature] });
     }
-    setFormData({ ...formData, stalls: newStalls });
-  };
-
-  const addStallField = () => {
-    setFormData({
-      ...formData,
-      stalls: [...formData.stalls, { stallNumber: "", location: "", description: "", price: 0, status: "pending", features: [] }],
-    });
-  };
-
-  const removeStallField = (index: number) => {
-    setFormData({
-      ...formData,
-      stalls: formData.stalls.filter((_, i) => i !== index),
-    });
   };
 
   const handleSubmit = async () => {
@@ -230,24 +194,16 @@ const Stalls: React.FC = () => {
       if (!token) throw new Error("No authentication token found");
 
       const payload = {
-        booths: [{
-          _id: isEditing ? currentBoothId : undefined,
-          name: formData.name,
+        stalls: [{
+          _id: isEditing ? currentStallId : undefined,
+          stallNumber: formData.stallNumber,
           eventId: formData.eventId,
-          hall: formData.hall,
-          category: formData.category,
-          description: formData.description,
           location: formData.location,
+          description: formData.description,
+          price: formData.price,
+          category: formData.category,
           status: formData.status,
-          stalls: formData.stalls.map((stall) => ({
-            _id: isEditing ? (stall as any)._id : undefined,
-            stallNumber: stall.stallNumber,
-            location: stall.location,
-            description: stall.description,
-            price: Number(stall.price),
-            status: stall.status,
-            features: stall.features,
-          })),
+          features: formData.features,
         }],
       };
 
@@ -261,100 +217,92 @@ const Stalls: React.FC = () => {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to save booth");
+      if (!response.ok) throw new Error(data.message || "Failed to save stall");
 
-      setSuccess(data.message || "Booth and stalls saved successfully");
+      setSuccess(data.message || "Stall saved successfully");
       toast({ title: "Success", description: data.message });
       setShowAddModal(false);
       setFormData({
-        name: "",
+        stallNumber: "",
         eventId: "",
-        hall: "",
-        category: "",
-        description: "",
         location: "",
-        status: "open",
-        stalls: [{ stallNumber: "", location: "", description: "", price: 0, status: "pending", features: [] }],
+        description: "",
+        price: 0,
+        category: "",
+        status: "pending",
+        features: [],
       });
       setIsEditing(false);
-      setCurrentBoothId(null);
-      fetchBooths();
+      setCurrentStallId(null);
+      fetchStalls();
     } catch (err: any) {
-      setError(err.message || "Failed to save booth");
+      setError(err.message || "Failed to save stall");
       toast({ variant: "destructive", title: "Error", description: err.message });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (boothId: string | null, stallId?: string) => {
+  const handleDelete = async (stallId: string) => {
     setLoading(true);
     setError("");
     try {
       const token = localStorage.getItem("adminToken");
       if (!token) throw new Error("No authentication token found");
 
-      const response = await fetch(`${BaseUrl}/admin/delete-booth-stall`, {
+      const response = await fetch(`${BaseUrl}/admin/delete-stall`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ boothId, stallId }),
+        body: JSON.stringify({ stallId }),
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to delete");
+      if (!response.ok) throw new Error(data.message || "Failed to delete stall");
 
-      setSuccess(data.message || "Deleted successfully");
+      setSuccess(data.message || "Stall deleted successfully");
       toast({ title: "Success", description: data.message });
-      fetchBooths();
+      fetchStalls();
     } catch (err: any) {
-      setError(err.message || "Failed to delete");
+      setError(err.message || "Failed to delete stall");
       toast({ variant: "destructive", title: "Error", description: err.message });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEdit = (booth: Booth) => {
+  const handleEdit = (stall: Stall) => {
     setFormData({
-      name: booth.name,
-      eventId: booth.eventId,
-      hall: booth.hall,
-      category: booth.category,
-      description: booth.description,
-      location: booth.location,
-      status: booth.status,
-      stalls: booth.stalls.map((stall) => ({
-        _id: stall._id,
-        stallNumber: stall.stallNumber,
-        location: stall.location,
-        description: stall.description,
-        price: stall.price,
-        status: stall.status,
-        features: stall.features,
-      })),
+      stallNumber: stall.stallNumber,
+      eventId: stall.eventId,
+      location: stall.location,
+      description: stall.description,
+      price: stall.price,
+      category: stall.category,
+      status: stall.status,
+      features: stall.features,
     });
     setIsEditing(true);
-    setCurrentBoothId(booth._id);
+    setCurrentStallId(stall._id);
     setShowAddModal(true);
   };
 
-  const handleStatusUpdate = async (boothId: string | null, stallId: string | null, status: string) => {
+  const handleStatusUpdate = async (stallId: string, status: string) => {
     setLoading(true);
     setError("");
     try {
       const token = localStorage.getItem("adminToken");
       if (!token) throw new Error("No authentication token found");
 
-      const response = await fetch(`${BaseUrl}/admin/update-booth-stall-status`, {
+      const response = await fetch(`${BaseUrl}/admin/update-stall-status`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ boothId, stallId, status }),
+        body: JSON.stringify({ stallId, status }),
       });
 
       const data = await response.json();
@@ -362,7 +310,7 @@ const Stalls: React.FC = () => {
 
       setSuccess(data.message || "Status updated successfully");
       toast({ title: "Success", description: data.message });
-      fetchBooths();
+      fetchStalls();
     } catch (err: any) {
       setError(err.message || "Failed to update status");
       toast({ variant: "destructive", title: "Error", description: err.message });
@@ -431,19 +379,19 @@ const Stalls: React.FC = () => {
                 Stalls Management
               </h1>
               <p className="text-gray-600 text-lg">
-                Manage booths and stalls for your events, <span className="font-semibold text-blue-600">{user?.username}</span>.
+                Manage stalls for your events, <span className="font-semibold text-blue-600">{user?.username}</span>.
               </p>
             </div>
             <div className="flex space-x-4">
               <Button
-                onClick={() => setActiveTab("booths")}
+                onClick={() => setActiveTab("stalls")}
                 className={`rounded-xl transition-all duration-300 ${
-                  activeTab === "booths"
+                  activeTab === "stalls"
                     ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
                     : "bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 hover:border-gray-400"
                 }`}
               >
-                Booths
+                Stalls
               </Button>
               <Button
                 onClick={() => setActiveTab("requests")}
@@ -461,7 +409,7 @@ const Stalls: React.FC = () => {
       </div>
 
       {/* Filters */}
-      {activeTab === "booths" && (
+      {activeTab === "stalls" && (
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
           <CardHeader className="relative border-b border-gray-100/50 bg-white/50">
@@ -475,11 +423,11 @@ const Stalls: React.FC = () => {
               <div className="space-y-2">
                 <Label htmlFor="search" className="text-sm font-semibold text-gray-700 flex items-center">
                   <Search className="h-4 w-4 mr-2 text-blue-500" />
-                  Search Booths
+                  Search Stalls
                 </Label>
                 <Input
                   id="search"
-                  placeholder="Search by hall or category..."
+                  placeholder="Search by stall number, description, or category..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="h-12 rounded-xl"
@@ -509,25 +457,28 @@ const Stalls: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-end">
-                {/* <Button
-                  onClick={() => setPagination({ ...pagination, page: 1 })}
-                  disabled={loading}
-                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
-                >
-                  <Filter className="h-5 w-5 mr-2" />
-                  Apply Filters
-                </Button> */}
-                {activeTab === "booths" && (
-                <Button
-                  onClick={() => setShowAddModal(true)}
-                  className="bg-gradient-to-r ms-auto my-auto from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
-                >
-                  <PlusCircle className="h-5 w-5 mr-2" />
-                  Add New Booth
-                </Button>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="category" className="text-sm font-semibold text-gray-700 flex items-center">
+                  <Store className="h-4 w-4 mr-2 text-purple-500" />
+                  Category
+                </Label>
+                <Input
+                  id="category"
+                  placeholder="Enter category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="h-12 rounded-xl"
+                />
               </div>
+            </div>
+            <div className="flex items-end mt-4">
+              <Button
+                onClick={() => setShowAddModal(true)}
+                className="bg-gradient-to-r ms-auto my-auto from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
+              >
+                <PlusCircle className="h-5 w-5 mr-2" />
+                Add New Stall
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -549,25 +500,24 @@ const Stalls: React.FC = () => {
         )}
       </div>
 
-      {/* Booths List */}
-      {activeTab === "booths" && (
+      {/* Stalls List */}
+      {activeTab === "stalls" && (
         <div className="space-y-4">
-           {loading && (
-                        <div className="flex flex-col items-center space-y-4">
-                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                          <p className="text-gray-500 font-medium">Loading booths...</p>
-                        </div>
-                  )}
-          {booths.length === 0 && !loading && (
+          {loading && (
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+              <p className="text-gray-500 font-medium">Loading stalls...</p>
+            </div>
+          )}
+          {stalls.length === 0 && !loading && (
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
               <CardContent className="p-6 text-center text-gray-600">
-              No booths found.
+                No stalls found.
               </CardContent>
-
             </Card>
           )}
-          {booths.map((booth) => (
-            <Card key={booth._id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl">
+          {stalls.map((stall) => (
+            <Card key={stall._id} className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl">
               <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-blue-50/30"></div>
               <CardHeader className="relative border-b border-gray-100/50 bg-white/30">
                 <div className="flex justify-between items-center">
@@ -575,13 +525,13 @@ const Stalls: React.FC = () => {
                     <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
                       <Store className="h-5 w-5 text-white" />
                     </div>
-                    {booth.eventName} - {booth.name}
+                    {stall.eventName} - Stall {stall.stallNumber}
                   </CardTitle>
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleEdit(booth)}
+                      onClick={() => handleEdit(stall)}
                       className="text-blue-600 hover:bg-blue-100 rounded-xl"
                     >
                       <Edit className="h-5 w-5" />
@@ -589,83 +539,70 @@ const Stalls: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(booth._id, undefined)}
+                      onClick={() => handleDelete(stall._id)}
                       className="text-red-600 hover:bg-red-100 rounded-xl"
                     >
                       <Trash2 className="h-5 w-5" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setExpandedBooth(expandedBooth === booth._id ? null : booth._id)}
-                      className="text-gray-600 hover:bg-gray-100 rounded-xl"
-                    >
-                      {expandedBooth === booth._id ? (
-                        <ChevronUp className="h-5 w-5" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5" />
-                      )}
-                    </Button>
                   </div>
                 </div>
                 <div className="text-sm text-gray-600 mt-2">
-                  <span className="px-3"><span className="font-bold">Hall:</span> {booth.hall}</span>
-                  <span className="px-3"><span className="font-bold">Category:</span> {booth.category}</span>
-                  <span className="px-3"><span className="font-bold">Status:</span> <span className={`inline-block px-2 py-1 rounded-full ${getStatusColor(booth.status)}`}>{booth.status}</span></span>
+                  <span className="px-3"><span className="font-bold">Location:</span> {stall.location || "N/A"}</span>
+                  <span className="px-3"><span className="font-bold">Price:</span> ${stall.price}</span>
+                  <span className="px-3"><span className="font-bold">Category:</span> {stall.category || "N/A"}</span>
+                  <span className="px-3"><span className="font-bold">Status:</span> <span className={`inline-block px-2 py-1 rounded-full ${getStatusColor(stall.status)}`}>{stall.status}</span></span>
                 </div>
               </CardHeader>
-              {expandedBooth === booth._id && (
-                <CardContent className="relative p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-100 bg-gray-50/50">
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Stall Number</th>
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Location</th>
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Price</th>
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th>
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {booth.stalls.map((stall) => (
-                          <tr key={stall._id} className="hover:bg-blue-50/30">
-                            <td className="py-4 px-6 font-medium text-gray-900">{stall.stallNumber}</td>
-                            <td className="py-4 px-6 text-gray-800">{stall.location || "N/A"}</td>
-                            <td className="py-4 px-6 text-gray-800">${stall.price}</td>
-                            <td className="py-4 px-6">
-                              <Select
-                                value={stall.status}
-                                onValueChange={(value) => handleStatusUpdate(null, stall._id, value)}
-                              >
-                                <SelectTrigger className={`w-[120px] ${getStatusColor(stall.status)}`}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="reserved">Reserved</SelectItem>
-                                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </td>
-                            <td className="py-4 px-6">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(null, stall._id)}
-                                className="text-red-600 hover:bg-red-100 rounded-xl"
-                              >
-                                <Trash2 className="h-5 w-5" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              )}
+              <CardContent className="relative p-0">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50/50">
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Stall Number</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Location</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Price</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Category</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th>
+                        <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      <tr className="hover:bg-blue-50/30">
+                        <td className="py-4 px-6 font-medium text-gray-900">{stall.stallNumber}</td>
+                        <td className="py-4 px-6 text-gray-800">{stall.location || "N/A"}</td>
+                        <td className="py-4 px-6 text-gray-800">${stall.price}</td>
+                        <td className="py-4 px-6 text-gray-800">{stall.category || "N/A"}</td>
+                        <td className="py-4 px-6">
+                          <Select
+                            value={stall.status}
+                            onValueChange={(value) => handleStatusUpdate(stall._id, value)}
+                          >
+                            <SelectTrigger className={`w-[120px] ${getStatusColor(stall.status)}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="reserved">Reserved</SelectItem>
+                              <SelectItem value="confirmed">Confirmed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="py-4 px-6">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(stall._id)}
+                            className="text-red-600 hover:bg-red-100 rounded-xl"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
             </Card>
           ))}
         </div>
@@ -689,11 +626,12 @@ const Stalls: React.FC = () => {
                   <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
                     <Store className="h-5 w-5 text-white" />
                   </div>
-                  Stall: {stall.stallNumber}
+                  Stall: {stall.stallNumber} ({stall.eventName})
                 </CardTitle>
                 <div className="text-sm text-gray-600 mt-2">
                   <span className="px-3"><span className="font-bold">Location:</span> {stall.location}</span>
                   <span className="px-3"><span className="font-bold">Price:</span> ${stall.price}</span>
+                  <span className="px-3"><span className="font-bold">Category:</span> {stall.category || "N/A"}</span>
                   <span className="px-3"><span className="font-bold">Status:</span> <span className={`inline-block px-2 py-1 rounded-full ${getStatusColor(stall.status)}`}>{stall.status}</span></span>
                 </div>
               </CardHeader>
@@ -744,30 +682,30 @@ const Stalls: React.FC = () => {
       )}
 
       {/* Add/Edit Modal */}
-      {showAddModal && activeTab === "booths" && (
+      {showAddModal && activeTab === "stalls" && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center" style={{ marginTop: "0px" }}>
           <Card className="w-full max-w-2xl bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader className="border-b border-gray-100">
               <CardTitle className="text-2xl font-bold flex items-center text-gray-800">
                 <Store className="h-6 w-6 text-blue-500 mr-3" />
-                {isEditing ? "Edit Booth" : "Add New Booth"}
+                {isEditing ? "Edit Stall" : "Add New Stall"}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-semibold text-gray-700">Booth Name</Label>
+                  <Label htmlFor="stallNumber" className="text-sm font-semibold text-gray-700">Stall Number</Label>
                   <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
+                    id="stallNumber"
+                    name="stallNumber"
+                    value={formData.stallNumber}
                     onChange={handleInputChange}
-                    placeholder="Enter booth name"
+                    placeholder="Enter stall number"
                     className="h-12 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="eventId" className="text-sm font-semibold text-gray-700">Event ID</Label>
+                  <Label htmlFor="eventId" className="text-sm font-semibold text-gray-700">Event</Label>
                   <Select
                     value={formData.eventId}
                     onValueChange={(value) => setFormData({ ...formData, eventId: value })}
@@ -785,24 +723,13 @@ const Stalls: React.FC = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="hall" className="text-sm font-semibold text-gray-700">Hall</Label>
+                  <Label htmlFor="location" className="text-sm font-semibold text-gray-700">Location</Label>
                   <Input
-                    id="hall"
-                    name="hall"
-                    value={formData.hall}
+                    id="location"
+                    name="location"
+                    value={formData.location}
                     onChange={handleInputChange}
-                    placeholder="Enter hall"
-                    className="h-12 rounded-xl"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category" className="text-sm font-semibold text-gray-700">Category</Label>
-                  <Input
-                    id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    placeholder="Enter category"
+                    placeholder="Enter location"
                     className="h-12 rounded-xl"
                   />
                 </div>
@@ -818,13 +745,25 @@ const Stalls: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="location" className="text-sm font-semibold text-gray-700">Location</Label>
+                  <Label htmlFor="price" className="text-sm font-semibold text-gray-700">Price</Label>
                   <Input
-                    id="location"
-                    name="location"
-                    value={formData.location}
+                    id="price"
+                    name="price"
+                    type="number"
+                    value={formData.price}
                     onChange={handleInputChange}
-                    placeholder="Enter location"
+                    placeholder="Enter price"
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-sm font-semibold text-gray-700">Category</Label>
+                  <Input
+                    id="category"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    placeholder="Enter category"
                     className="h-12 rounded-xl"
                   />
                 </div>
@@ -838,120 +777,28 @@ const Stalls: React.FC = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="reserved">Reserved</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-800">St Mello</h3>
-                  <Button
-                    onClick={addStallField}
-                    className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
-                  >
-                    <PlusCircle className="h-5 w-5 mr-2" />
-                    Add Stall
-                  </Button>
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-gray-700">Features</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["electricity", "wifi", "furniture", "other"].map((feature) => (
+                    <Button
+                      key={feature}
+                      variant={formData.features.includes(feature) ? "default" : "outline"}
+                      onClick={() => handleFeatureToggle(feature)}
+                      className={`rounded-full ${formData.features.includes(feature) ? "bg-blue-600 text-white" : "border-gray-300"}`}
+                    >
+                      {feature.charAt(0).toUpperCase() + feature.slice(1)}
+                    </Button>
+                  ))}
                 </div>
-                {formData.stalls.map((stall, index) => (
-                  <div key={index} className="border border-gray-200 p-4 rounded-xl space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor={`stallNumber-${index}`} className="text-sm font-semibold text-gray-700">Stall Number</Label>
-                        <Input
-                          id={`stallNumber-${index}`}
-                          name="stallNumber"
-                          value={stall.stallNumber}
-                          onChange={(e) => handleInputChange(e, index)}
-                          placeholder="Enter stall number"
-                          className="h-12 rounded-xl"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`location-${index}`} className="text-sm font-semibold text-gray-700">Location</Label>
-                        <Input
-                          id={`location-${index}`}
-                          name="location"
-                          value={stall.location}
-                          onChange={(e) => handleInputChange(e, index)}
-                          placeholder="Enter stall location"
-                          className="h-12 rounded-xl"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`description-${index}`} className="text-sm font-semibold text-gray-700">Description</Label>
-                        <Input
-                          id={`description-${index}`}
-                          name="description"
-                          value={stall.description}
-                          onChange={(e) => handleInputChange(e, index)}
-                          placeholder="Enter stall description"
-                          className="h-12 rounded-xl"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`price-${index}`} className="text-sm font-semibold text-gray-700">Price</Label>
-                        <Input
-                          id={`price-${index}`}
-                          name="price"
-                          type="number"
-                          value={stall.price}
-                          onChange={(e) => handleInputChange(e, index)}
-                          placeholder="Enter price"
-                          className="h-12 rounded-xl"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor={`status-${index}`} className="text-sm font-semibold text-gray-700">Status</Label>
-                        <Select
-                          value={stall.status}
-                          onValueChange={(value) => {
-                            const newStalls = [...formData.stalls];
-                            newStalls[index].status = value;
-                            setFormData({ ...formData, stalls: newStalls });
-                          }}
-                        >
-                          <SelectTrigger className="h-12 rounded-xl">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="reserved">Reserved</SelectItem>
-                            <SelectItem value="confirmed">Confirmed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold text-gray-700">Features</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {["electricity", "wifi", "furniture", "other"].map((feature) => (
-                          <Button
-                            key={feature}
-                            variant={stall.features.includes(feature) ? "default" : "outline"}
-                            onClick={() => handleFeatureToggle(feature, index)}
-                            className={`rounded-full ${stall.features.includes(feature) ? "bg-blue-600 text-white" : "border-gray-300"}`}
-                          >
-                            {feature.charAt(0).toUpperCase() + feature.slice(1)}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    {formData.stalls.length > 1 && (
-                      <Button
-                        variant="destructive"
-                        onClick={() => removeStallField(index)}
-                        className="rounded-xl"
-                      >
-                        <Trash2 className="h-5 w-5 mr-2" />
-                        Remove Stall
-                      </Button>
-                    )}
-                  </div>
-                ))}
               </div>
               <div className="flex justify-end space-x-4">
                 <Button
@@ -959,16 +806,16 @@ const Stalls: React.FC = () => {
                   onClick={() => {
                     setShowAddModal(false);
                     setIsEditing(false);
-                    setCurrentBoothId(null);
+                    setCurrentStallId(null);
                     setFormData({
-                      name: "",
+                      stallNumber: "",
                       eventId: "",
-                      hall: "",
-                      category: "",
-                      description: "",
                       location: "",
-                      status: "open",
-                      stalls: [{ stallNumber: "", location: "", description: "", price: 0, status: "pending", features: [] }],
+                      description: "",
+                      price: 0,
+                      category: "",
+                      status: "pending",
+                      features: [],
                     });
                   }}
                   className="rounded-xl"
@@ -986,7 +833,7 @@ const Stalls: React.FC = () => {
                       Saving...
                     </div>
                   ) : (
-                    isEditing ? "Update Booth" : "Create Booth"
+                    isEditing ? "Update Stall" : "Create Stall"
                   )}
                 </Button>
               </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useUserAuth } from "../../contexts/UserAuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, Store, CheckCircle, AlertCircle, Loader2, ChevronDown, ChevronUp, MapPin, Users, Star, X } from "lucide-react";
+import { Calendar, Store, CheckCircle, AlertCircle, Loader2, ChevronDown, ChevronUp, MapPin, Users, FileText } from "lucide-react";
 import { BaseUrl } from "@/sevice/Url";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Event {
   _id: string;
@@ -22,14 +23,6 @@ interface Event {
 interface Stall {
   _id: string;
   stallNumber: string;
-  boothId: {
-    _id: string;
-    name: string;
-    hall: string;
-    category: string;
-    description: string;
-    location: string;
-  };
   eventId: {
     _id: string;
     name: string;
@@ -37,26 +30,18 @@ interface Stall {
   location: string;
   description: string;
   price: number;
+  category: string;
   status: string;
   features: string[];
   applications: { exhibitorId: string; status: string }[];
 }
 
-interface Booth {
-  _id: string;
-  name: string;
-  hall: string;
-  category: string;
-  description: string;
-  location: string;
-  stalls: Stall[];
-}
-
 const UserStalls: React.FC = () => {
   const { user } = useUserAuth();
+  const { toast } = useToast();
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
-  const [booths, setBooths] = useState<Booth[]>([]);
+  const [stalls, setStalls] = useState<Stall[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [search, setSearch] = useState("");
@@ -64,15 +49,27 @@ const UserStalls: React.FC = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
   const [selectedStallId, setSelectedStallId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: "",
+    name: user?.name || "",
     designation: "",
-    email: "",
-    mobile: "",
+    email: user?.email || "",
+    mobile: user?.mobile || "",
+    representativesName: "",
+    representativesDesignation: "",
+    representativesEmail: "",
+    representativesMobile: "",
   });
+  const [complaintFormData, setComplaintFormData] = useState({
+    type: "",
+    description: "",
+  });
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [file, setFile] = useState<File | null>(null);
   const eventRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchEvents = async () => {
     setError("");
@@ -113,53 +110,14 @@ const UserStalls: React.FC = () => {
       setEvents(responseData.data.docs || []);
     } catch (err: any) {
       setError(err.message || "Failed to fetch events. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStalls = async (eventId: string) => {
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    try {
-      const token = localStorage.getItem("userToken");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response = await fetch(`${BaseUrl}/user/get-stall-details`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          search,
-          eventId,
-          page: 1,
-          limit: 10,
-          category: selectedCategory || undefined,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch stalls");
-      }
-
-      const responseData = await response.json();
-      setBooths(responseData.data.booths || []);
-      setSuccess("Stalls loaded successfully");
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch stalls. Please try again.");
+      toast({ variant: "destructive", title: "Error", description: err.message });
     } finally {
       setLoading(false);
     }
   };
 
   const fetchCategories = async (eventId: string) => {
+    setLoading(true);
     try {
       const token = localStorage.getItem("userToken");
       if (!token) {
@@ -181,33 +139,175 @@ const UserStalls: React.FC = () => {
       }
 
       const responseData = await response.json();
-      const uniqueCategories = [...new Set(
-        responseData.data
-          .map((booth: any) => booth.category)
-          .filter((category: string) => category && category.trim() !== "")
-      )];
-      setCategories(uniqueCategories);
+      setCategories(responseData.data || []);
     } catch (err: any) {
       setError(err.message || "Failed to fetch categories. Please try again.");
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleApplyForStall = async () => {
-    if (user?.role !== "exhibitor") {
-      setError("Only exhibitors can apply for stalls");
+  const fetchStalls = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("userToken");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(`${BaseUrl}/user/get-stall-details`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          search,
+          eventId: selectedEvent,
+          category: selectedCategory,
+          status: "pending",
+          page: 1,
+          limit: 100,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to fetch stalls");
+      }
+
+      const responseData = await response.json();
+      setStalls(responseData.data.stalls || []);
+      setSuccess(responseData.message || "Stalls loaded successfully");
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch stalls");
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchCategories(selectedEvent);
+      fetchStalls();
+    }
+  }, [selectedEvent, search, selectedCategory]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleComplaintInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setComplaintFormData({ ...complaintFormData, [name]: value });
+    validateComplaintForm();
+  };
+
+  const handleComplaintSelectChange = (value: string) => {
+    setComplaintFormData({ ...complaintFormData, type: value });
+    validateComplaintForm();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleApply = (stallId: string) => {
+    setSelectedStallId(stallId);
+    setIsModalOpen(true);
+  };
+
+  const handleComplaintClick = (eventId: string) => {
+    setSelectedEventId(eventId);
+    setIsComplaintModalOpen(true);
+  };
+
+  const validateComplaintForm = () => {
+    const errors: { [key: string]: string } = {};
+    if (!complaintFormData.type) errors.type = "Complaint type is required";
+    if (!complaintFormData.description.trim() || complaintFormData.description.length < 10)
+      errors.description = "Description must be at least 10 characters long";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmitComplaint = async () => {
+    if (!selectedEventId) {
+      setError("No event selected");
+      toast({ variant: "destructive", title: "Error", description: "No event selected" });
       return;
     }
 
+    if (!validateComplaintForm()) {
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please fill all required fields correctly",
+      });
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("userToken");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(`${BaseUrl}/user/submit-complaint`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          eventId: selectedEventId,
+          type: complaintFormData.type,
+          description: complaintFormData.description,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit complaint");
+      }
+
+      const responseData = await response.json();
+      setSuccess(responseData.message || "Complaint submitted successfully");
+      toast({ title: "Success", description: responseData.message });
+      setIsComplaintModalOpen(false);
+      setComplaintFormData({ type: "", description: "" });
+      setFormErrors({});
+    } catch (err: any) {
+      setError(err.message || "Failed to submit complaint");
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitApplication = async () => {
     if (!selectedStallId) {
       setError("No stall selected");
+      toast({ variant: "destructive", title: "Error", description: "No stall selected" });
       return;
     }
 
-    if (!formData.name || !formData.designation || !formData.email || !formData.mobile) {
-      setError("Please fill in all required fields");
-      return;
-    }
-
+    setLoading(true);
+    setError("");
     try {
       const token = localStorage.getItem("userToken");
       if (!token) {
@@ -216,13 +316,21 @@ const UserStalls: React.FC = () => {
 
       const formDataToSend = new FormData();
       formDataToSend.append("stallId", selectedStallId);
+      formDataToSend.append("eventId", selectedEvent || "");
       formDataToSend.append("name", formData.name);
-      formDataToSend.append("designation", formData.designation);
       formDataToSend.append("email", formData.email);
       formDataToSend.append("mobile", formData.mobile);
+      formDataToSend.append("designation", formData.designation);
+      formDataToSend.append("representativesName", formData.representativesName);
+      formDataToSend.append("representativesDesignation", formData.representativesDesignation);
+      formDataToSend.append("representativesEmail", formData.representativesEmail);
+      formDataToSend.append("representativesMobile", formData.representativesMobile);
       if (file) {
-        formDataToSend.append("representatives", file);
+        formDataToSend.append("representative-profile", file);
       }
+      formDataToSend.append("orderId", "mock_order_id");
+      formDataToSend.append("paymentId", "mock_payment_id");
+      formDataToSend.append("signature", "mock_signature");
 
       const response = await fetch(`${BaseUrl}/user/apply-stall`, {
         method: "POST",
@@ -237,497 +345,494 @@ const UserStalls: React.FC = () => {
         throw new Error(errorData.message || "Failed to apply for stall");
       }
 
-      setSuccess("Application submitted successfully");
+      const responseData = await response.json();
+      setSuccess(responseData.message || "Application submitted successfully");
+      toast({ title: "Success", description: responseData.message });
       setIsModalOpen(false);
-      setFormData({ name: "", designation: "", email: "", mobile: "" });
+      setFormData({
+        name: user?.name || "",
+        designation: "",
+        email: user?.email || "",
+        mobile: user?.mobile || "",
+        representativesName: "",
+        representativesDesignation: "",
+        representativesEmail: "",
+        representativesMobile: "",
+      });
       setFile(null);
-      if (selectedEvent) {
-        fetchStalls(selectedEvent);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
+      fetchStalls();
     } catch (err: any) {
-      setError(err.message || "Failed to apply for stall. Please try again.");
+      setError(err.message || "Failed to submit application");
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const openModal = (stallId: string) => {
-    setSelectedStallId(stallId);
-    setIsModalOpen(true);
+  const toggleEvent = (eventId: string) => {
+    setSelectedEvent(selectedEvent === eventId ? null : eventId);
+    setSelectedCategory("");
+    setSearch("");
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedStallId(null);
-    setFormData({ name: "", designation: "", email: "", mobile: "" });
-    setFile(null);
-    setError("");
-  };
-
-  useEffect(() => {
-    fetchEvents();
-  }, [user]);
-
-  useEffect(() => {
-    if (selectedEvent) {
-      fetchCategories(selectedEvent);
-      fetchStalls(selectedEvent);
-    }
-  }, [selectedEvent, search, selectedCategory]);
-
-  const getStatusColor = (status?: string) => {
-    if (!status) return "bg-slate-100 text-slate-700 border-slate-200";
-    switch (status.toLowerCase()) {
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
       case "pending":
-        return "bg-amber-50 text-amber-700 border-amber-200";
+        return "bg-yellow-100 text-yellow-800";
       case "reserved":
-        return "bg-blue-50 text-blue-700 border-blue-200";
+        return "bg-blue-100 text-blue-800";
       case "confirmed":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        return "bg-green-100 text-green-600";
       case "cancelled":
-        return "bg-red-50 text-red-700 border-red-200";
+        return "bg-red-100 text-red-800";
       default:
-        return "bg-slate-100 text-slate-700 border-slate-200";
+        return "bg-gray-100 text-gray-800";
     }
-  };
-
-  const handleEventClick = (eventId: string) => {
-    if (selectedEvent === eventId) {
-      setSelectedEvent(null);
-      setBooths([]);
-      setCategories([]);
-      setSearch("");
-      setSelectedCategory("");
-    } else {
-      setSelectedEvent(eventId);
-    }
-    setTimeout(() => {
-      if (eventId && eventRefs.current[eventId]) {
-        eventRefs.current[eventId]?.scrollIntoView({ behavior: "smooth", block: "end" });
-      }
-    }, 100);
   };
 
   return (
-    <div className=" bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
-      <div className="p-4 sm:p-6 lg:p-8 mx-auto">
-        {/* Hero Section */}
-        <div className="relative overflow-hidden mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 via-purple-600/5 to-cyan-600/10 rounded-3xl"></div>
-          <div className="absolute -top-4 -right-4 w-72 h-72 bg-gradient-to-r from-indigo-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-4 -left-4 w-72 h-72 bg-gradient-to-r from-cyan-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
-          
-          <div className="relative xl:flex justify-between bg-white/60 backdrop-blur-xl rounded-3xl sm:p-6 border border-white/40">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl">
-                <Calendar className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-slate-900 via-indigo-800 to-purple-800 bg-clip-text text-transparent">
-                  Event Stalls
-                </h1>
-                <p className="text-lg text-slate-600 mt-2">
-                  {selectedEvent
-                    ? `Discover ${user?.role === "exhibitor" ? "and apply for" : "and explore"} premium stalls`
-                    : "Choose an event to explore available exhibition stalls"}
-                </p>
-              </div>
+    <div className="min-h-full bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
+      {/* Header */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-purple-600/5 rounded-2xl"></div>
+        <div className="relative bg-white/70 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-white/20 shadow-xl">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <div className="space-y-2">
+              <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+                Available Stalls
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Browse and apply for stalls,{" "}
+                <span className="font-semibold text-blue-600">{user?.name}</span>.
+              </p>
             </div>
-            
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 mt-6 xl:mt-0 gap-6">
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-white/40">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-100 rounded-xl">
-                    <Calendar className="h-5 w-5 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-slate-900">{events.length}</p>
-                    <p className="text-sm text-slate-600">Active Events</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-white/40">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-xl">
-                    <Store className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-slate-900">{booths.reduce((acc, booth) => acc + booth.stalls.length, 0)}</p>
-                    <p className="text-sm text-slate-600">Available Stalls</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-white/40">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-cyan-100 rounded-xl">
-                    <Users className="h-5 w-5 text-cyan-600" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-slate-900">{categories.length}</p>
-                    <p className="text-sm text-slate-600">Categories</p>
-                  </div>
-                </div>
-              </div>
+            <div className="flex space-x-4">
+              <Link to="/user/booking-history">
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl">
+                  View Booking History
+                </Button>
+              </Link>
+              <Link to="/user/complaints">
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl">
+                  View Complaints
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Alerts */}
+      {/* Filters */}
+      <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+        <CardHeader className="relative border-b border-gray-100/50 bg-white/50">
+          <CardTitle className="text-xl font-bold flex items-center text-gray-800">
+            <Store className="h-5 w-5 text-blue-500 mr-3" />
+            Search & Filter Stalls
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="relative p-6 lg:p-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="search" className="text-sm font-semibold text-gray-700">
+                Search Stalls
+              </Label>
+              <Input
+                id="search"
+                placeholder="Search by stall number, location, or category..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-12 rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category" className="text-sm font-semibold text-gray-700">
+                Category
+              </Label>
+              <Select
+                value={selectedCategory}
+                onValueChange={(value) => setSelectedCategory(value)}
+              >
+                <SelectTrigger className="h-12 rounded-xl">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Alerts */}
+      <div className="space-y-4">
         {error && (
-          <Alert className="mb-6 border-0 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-lg animate-in slide-in-from-top-4 duration-300">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <AlertDescription className="text-red-700 font-medium">{error}</AlertDescription>
+          <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
+            <AlertCircle className="h-5 w-5" />
+            <AlertDescription className="font-medium">{error}</AlertDescription>
           </Alert>
         )}
         {success && (
-          <Alert className="mb-6 border-0 bg-emerald-50/80 backdrop-blur-sm rounded-2xl shadow-lg animate-in slide-in-from-top-4 duration-300">
-            <CheckCircle className="h-5 w-5 text-emerald-600" />
-            <AlertDescription className="text-emerald-700 font-medium">{success}</AlertDescription>
+          <Alert variant="default" className="border-0 shadow-lg bg-green-50/80 backdrop-blur-sm rounded-xl border-green-200">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
           </Alert>
         )}
+      </div>
 
-        {/* Modal for Stall Application */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="sm:max-w-[600px] bg-white/90 backdrop-blur-xl rounded-3xl border border-white/40 shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-slate-900">Apply for Stall</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 py-6">
-              <div>
-                <Label htmlFor="name" className="text-sm font-medium text-slate-700">Name</Label>
+      {/* Events and Stalls */}
+      <div className="space-y-6">
+        {loading && (
+          <div className="flex flex-col items-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+            <p className="text-gray-500 font-medium">Loading...</p>
+          </div>
+        )}
+        {!loading && events.length === 0 && (
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
+            <CardContent className="p-6 text-center text-gray-600">
+              No events found.
+            </CardContent>
+          </Card>
+        )}
+        {events.map((event) => (
+          <Card
+            key={event._id}
+            className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl"
+            ref={(el) => (eventRefs.current[event._id] = el)}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-50/50 to-blue-50/30"></div>
+            <CardHeader className="relative border-b border-gray-100/50 bg-white/30">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-xl font-bold flex items-center text-gray-800">
+                  <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                  {event.name}
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => toggleEvent(event._id)}
+                    className="text-gray-600 hover:bg-gray-100 rounded-full"
+                  >
+                    {selectedEvent === event._id ? (
+                      <ChevronUp className="h-5 w-5" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleComplaintClick(event._id)}
+                    className="text-gray-600 hover:bg-gray-100 rounded-full"
+                    title="Submit Complaint"
+                  >
+                    <FileText className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+              <div className="text-sm text-gray-600 mt-2">
+                <span className="px-3"><span className="font-bold">Date:</span> {new Date(event.date).toLocaleDateString()}</span>
+                <span className="px-3"><span className="font-bold">Venue:</span> {event.venue?.name || "N/A"}, {event.venue?.address || "N/A"}</span>
+              </div>
+            </CardHeader>
+            {selectedEvent === event._id && (
+              <CardContent className="relative p-6">
+                {stalls.length === 0 ? (
+                  <div className="text-center text-gray-600">No stalls available for this event.</div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {stalls.map((stall) => (
+                      <Card
+                        key={stall._id}
+                        className="relative border-0 shadow-lg bg-white/90 rounded-xl overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50"></div>
+                        <CardHeader className="relative">
+                          <CardTitle className="text-lg font-semibold flex items-center">
+                            <Store className="h-5 w-5 text-blue-500 mr-2" />
+                            Stall {stall.stallNumber}
+                          </CardTitle>
+                          <Badge className={`absolute top-4 right-4 ${getStatusColor(stall.status)}`}>
+                            {stall.status}
+                          </Badge>
+                        </CardHeader>
+                        <CardContent className="relative space-y-2">
+                          <p><span className="font-bold">Event:</span> {stall.eventId.name}</p>
+                          <p><span className="font-bold">Location:</span> {stall.location || "N/A"}</p>
+                          <p><span className="font-bold">Category:</span> {stall.category || "N/A"}</p>
+                          <p><span className="font-bold">Price:</span> ${stall.price}</p>
+                          <p><span className="font-bold">Description:</span> {stall.description || "N/A"}</p>
+                          <div>
+                            <span className="font-bold">Features:</span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {stall.features.map((feature) => (
+                                <Badge key={feature} variant="secondary" className="bg-blue-100 text-blue-800">
+                                  {feature}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                          <Button
+                            onClick={() => handleApply(stall._id)}
+                            disabled={stall.status !== "pending" || stall.applications.some(app => app.exhibitorId === user?._id)}
+                            className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
+                          >
+                            {stall.applications.some(app => app.exhibitorId === user?._id)
+                              ? "Already Applied"
+                              : "Apply for Stall"}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      {/* Stall Application Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center text-gray-800">
+              <Users className="h-6 w-6 text-blue-500 mr-3" />
+              Apply for Stall
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-semibold">Name</Label>
                 <Input
                   id="name"
+                  name="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={handleInputChange}
                   placeholder="Enter your name"
-                  className="mt-1 rounded-2xl border-0 bg-white/70 backdrop-blur-sm"
+                  className="h-12 rounded-xl"
                 />
               </div>
-              <div>
-                <Label htmlFor="designation" className="text-sm font-medium text-slate-700">Designation</Label>
+              <div className="space-y-2">
+                <Label htmlFor="designation" className="text-sm font-semibold">Designation</Label>
                 <Input
                   id="designation"
+                  name="designation"
                   value={formData.designation}
-                  onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                  placeholder="Enter your designation"
-                  className="mt-1 rounded-2xl border-0 bg-white/70 backdrop-blur-sm"
+                  onChange={handleInputChange}
+                  placeholder="Enter designation"
+                  className="h-12 rounded-xl"
                 />
               </div>
-              <div>
-                <Label htmlFor="email" className="text-sm font-medium text-slate-700">Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-semibold">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="Enter your email"
-                  className="mt-1 rounded-2xl border-0 bg-white/70 backdrop-blur-sm"
+                  onChange={handleInputChange}
+                  placeholder="Enter email"
+                  className="h-12 rounded-xl"
                 />
               </div>
-              <div>
-                <Label htmlFor="mobile" className="text-sm font-medium text-slate-700">Mobile</Label>
+              <div className="space-y-2">
+                <Label htmlFor="mobile" className="text-sm font-semibold">Mobile</Label>
                 <Input
                   id="mobile"
+                  name="mobile"
                   value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                  placeholder="Enter your mobile number"
-                  className="mt-1 rounded-2xl border-0 bg-white/70 backdrop-blur-sm"
-                />
-              </div>
-              <div>
-                <Label htmlFor="image" className="text-sm font-medium text-slate-700">Image</Label>
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="mt-1 rounded-2xl border-0 bg-white/70 backdrop-blur-sm"
+                  onChange={handleInputChange}
+                  placeholder="Enter mobile number"
+                  className="h-12 rounded-xl"
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button
-                onClick={closeModal}
-                className="bg-slate-200 text-slate-700 hover:bg-slate-300 rounded-2xl px-6 py-2"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleApplyForStall}
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-2xl px-6 py-2"
-              >
-                Submit Application
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Events Section */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="h-8 w-1 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
-            <h2 className="text-3xl font-bold text-slate-900 me-auto">Featured Events</h2>
-            <Link to="/user/bookinghistory">
-              <Button className=" bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-2xl px-6 py-2">
-                Booking History
-              </Button>
-            </Link>
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Representative Details</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="representativesName" className="text-sm font-semibold">Name</Label>
+                  <Input
+                    id="representativesName"
+                    name="representativesName"
+                    value={formData.representativesName}
+                    onChange={handleInputChange}
+                    placeholder="Enter representative's name"
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="representativesDesignation" className="text-sm font-semibold">Designation</Label>
+                  <Input
+                    id="representativesDesignation"
+                    name="representativesDesignation"
+                    value={formData.representativesDesignation}
+                    onChange={handleInputChange}
+                    placeholder="Enter representative's designation"
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="representativesEmail" className="text-sm font-semibold">Email</Label>
+                  <Input
+                    id="representativesEmail"
+                    name="representativesEmail"
+                    type="email"
+                    value={formData.representativesEmail}
+                    onChange={handleInputChange}
+                    placeholder="Enter representative's email"
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="representativesMobile" className="text-sm font-semibold">Mobile</Label>
+                  <Input
+                    id="representativesMobile"
+                    name="representativesMobile"
+                    value={formData.representativesMobile}
+                    onChange={handleInputChange}
+                    placeholder="Enter representative's mobile"
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="representative-profile" className="text-sm font-semibold">Profile Image</Label>
+                  <Input
+                    id="representative-profile"
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="h-12 rounded-xl"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-
-          {loading && !selectedEvent ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
-                <p className="text-slate-600 font-medium">Loading events...</p>
-              </div>
-            </div>
-          ) : events.length > 0 ? (
-            <div className="space-y-6">
-              {events.map((event, index) => (
-                <div 
-                  key={event._id} 
-                  ref={(el) => (eventRefs.current[event._id] = el)}
-                  className="animate-in slide-in-from-bottom-4 duration-500"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="group">
-                    {/* Event Card */}
-                    <Card
-                      className="relative border-0 shadow-lg hover:shadow-2xl transition-all duration-700 transform hover:-translate-y-1 bg-white/80 backdrop-blur-sm rounded-3xl cursor-pointer overflow-hidden"
-                      onClick={() => handleEventClick(event._id)}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-white/50 to-purple-50/50"></div>
-                      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500"></div>
-                      
-                      <CardContent className="relative p-8">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-6">
-                            <div className="relative">
-                              <div className="p-4 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                                <Calendar className="h-8 w-8 text-indigo-600" />
-                              </div>
-                              <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full animate-pulse"></div>
-                            </div>
-                            
-                            <div className="space-y-3">
-                              <h3 className="text-2xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors duration-300">
-                                {event.name}
-                              </h3>
-                              <div className="flex items-center gap-6 text-slate-600">
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="h-4 w-4 text-slate-400" />
-                                  <span className="font-medium">{event.venue?.name || "Venue TBA"}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4 text-slate-400" />
-                                  <span className="font-medium">
-                                    {event.date ? new Date(event.date).toLocaleDateString('en-US', { 
-                                      weekday: 'short', 
-                                      year: 'numeric', 
-                                      month: 'short', 
-                                      day: 'numeric' 
-                                    }) : "Date TBA"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-4">
-                            {selectedEvent === event._id && booths.length > 0 && (
-                              <Badge className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 px-4 py-2">
-                                {booths.reduce((acc, booth) => acc + booth.stalls.length, 0)} Stalls Available
-                              </Badge>
-                            )}
-                            <div className="p-3 bg-white/70 backdrop-blur-sm rounded-2xl border border-white/40 group-hover:scale-110 transition-transform duration-300">
-                              {selectedEvent === event._id ? (
-                                <ChevronUp className="h-6 w-6 text-indigo-600" />
-                              ) : (
-                                <ChevronDown className="h-6 w-6 text-slate-400 group-hover:text-indigo-600" />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Stalls Details - Collapsible Section */}
-                    <div
-                      className={`transition-all duration-700 ease-in-out overflow-hidden ${
-                        selectedEvent === event._id 
-                          ? "max-h-[5000px] opacity-100 translate-y-0" 
-                          : "max-h-0 opacity-0 -translate-y-8"
-                      }`}
-                    >
-                      {selectedEvent === event._id && (
-                        <div className="mt-6 space-y-8 animate-in slide-in-from-top-8 duration-700">
-                          {/* Search and Filter Controls */}
-                          <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 border border-white/40 shadow-lg">
-                            <div className="flex flex-col lg:flex-row gap-4">
-                              <div className="relative flex-1">
-                                <Input
-                                  type="text"
-                                  placeholder="Search stalls, halls, or descriptions..."
-                                  value={search}
-                                  onChange={(e) => setSearch(e.target.value)}
-                                  className="pl-12 pr-4 py-4 rounded-2xl border-0 bg-white/70 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:shadow-lg transition-all duration-300"
-                                />
-                                <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
-                                  <div className="p-1 bg-indigo-100 rounded-lg">
-                                    <Store className="h-4 w-4 text-indigo-600" />
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="lg:w-80">
-                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                  <SelectTrigger className="py-4 px-6 rounded-2xl border-0 bg-white/70 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-indigo-500">
-                                    <SelectValue placeholder="All Categories" />
-                                  </SelectTrigger>
-                                  <SelectContent className="rounded-2xl border-0 shadow-2xl bg-white/90 backdrop-blur-xl">
-                                    {categories.map((category) => (
-                                      <SelectItem key={category} value={category} className="rounded-xl">
-                                        {category}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Stalls Grid */}
-                          {loading ? (
-                            <div className="flex justify-center items-center h-64">
-                              <div className="flex flex-col items-center gap-4">
-                                <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
-                                <p className="text-slate-600 font-medium">Loading stalls...</p>
-                              </div>
-                            </div>
-                          ) : booths.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                              {booths.map((booth, boothIndex) =>
-                                booth.stalls.map((stall, stallIndex) => (
-                                  <Card
-                                    key={stall._id}
-                                    className="group relative border-0 shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 bg-white/80 backdrop-blur-sm rounded-3xl overflow-hidden animate-in slide-in-from-bottom-4"
-                                    style={{ animationDelay: `${(boothIndex * booth.stalls.length + stallIndex) * 100}ms` }}
-                                  >
-                                    <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-indigo-50/30"></div>
-                                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
-                                    
-                                    <CardContent className="relative p-6">
-                                      {/* Stall Header */}
-                                      <div className="flex items-start justify-between mb-6">
-                                        <div className="space-y-2">
-                                          <div className="flex items-center gap-3">
-                                            <h4 className="text-xl font-bold text-slate-900">{stall.stallNumber}</h4>
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(stall.status)}`}>
-                                              {stall.status}
-                                            </span>
-                                          </div>
-                                          <p className="text-slate-600 font-medium">{booth.hall} • {booth.category}</p>
-                                          <p className="text-sm text-slate-500">{stall.eventId.name}</p>
-                                        </div>
-                                        <div className="p-3 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl group-hover:scale-110 transition-transform duration-300">
-                                          <Store className="h-6 w-6 text-indigo-600" />
-                                        </div>
-                                      </div>
-
-                                      {/* Booth Details */}
-                                      <div className="bg-slate-50/70 rounded-2xl p-4 mb-4 border border-slate-200">
-                                        <h5 className="font-semibold text-slate-900 mb-2">Booth Information</h5>
-                                        <div className="space-y-1 text-sm text-slate-600">
-                                          <p><span className="font-medium">Name:</span> {booth.name}</p>
-                                          <p><span className="font-medium">Category:</span> {booth.category}</p>
-                                          <p><span className="font-medium">Location:</span> {booth.location || "Not specified"}</p>
-                                        </div>
-                                      </div>
-
-                                      {/* Description */}
-                                      <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">
-                                        {stall.description || "No description available"}
-                                      </p>
-
-                                      {/* Features */}
-                                      {stall.features.length > 0 && (
-                                        <div className="mb-6">
-                                          <div className="flex flex-wrap gap-2">
-                                            {stall.features.slice(0, 3).map((feature) => (
-                                              <Badge key={feature} className="bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-200 transition-colors duration-200">
-                                                {feature}
-                                              </Badge>
-                                            ))}
-                                            {stall.features.length > 3 && (
-                                              <Badge className="bg-slate-100 text-slate-600 border-slate-200">
-                                                +{stall.features.length - 3} more
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      {/* Price and Action */}
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                          <Star className="h-4 w-4 text-amber-500" />
-                                          <span className="text-2xl font-bold text-slate-900">${stall.price}</span>
-                                        </div>
-                                        
-                                        {user?.role === "exhibitor" && stall.status === "pending" && (
-                                          <Button
-                                            onClick={() => openModal(stall._id)}
-                                            disabled={stall.applications.some((app) => app.exhibitorId === user.id && app.status === "pending")}
-                                            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-2xl px-6 py-2 font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                                          >
-                                            {stall.applications.some((app) => app.exhibitorId === user.id && app.status === "pending")
-                                              ? "Applied"
-                                              : "Apply Now"}
-                                          </Button>
-                                        )}
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))
-                              )}
-                            </div>
-                          ) : (
-                            <Card className="border-0 shadow-lg bg-white/60 backdrop-blur-xl rounded-3xl">
-                              <CardContent className="p-12 text-center">
-                                <div className="flex flex-col items-center gap-4">
-                                  <div className="p-6 bg-slate-100 rounded-3xl">
-                                    <Store className="h-12 w-12 text-slate-400" />
-                                  </div>
-                                  <div>
-                                    <h3 className="text-xl font-semibold text-slate-900 mb-2">No Stalls Available</h3>
-                                    <p className="text-slate-600">There are currently no stalls available for this event. Check back later!</p>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsModalOpen(false);
+                setFile(null);
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = "";
+                }
+              }}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitApplication}
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
+            >
+              {loading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  Submitting...
                 </div>
-              ))}
+              ) : (
+                "Submit Application"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Complaint Modal */}
+      <Dialog open={isComplaintModalOpen} onOpenChange={setIsComplaintModalOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold flex items-center text-gray-800">
+              <FileText className="h-6 w-6 text-blue-500 mr-3" />
+              Submit Complaint
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {Object.keys(formErrors).length > 0 && (
+              <Alert variant="destructive" className="bg-red-50/80">
+                <AlertCircle className="h-5 w-5" />
+                <AlertDescription>
+                  {Object.values(formErrors).map((err, index) => (
+                    <div key={index} className="text-red-700">{err}</div>
+                  ))}
+                </AlertDescription>
+              </Alert>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="type" className="text-sm font-semibold">Complaint Type *</Label>
+              <Select
+                value={complaintFormData.type}
+                onValueChange={handleComplaintSelectChange}
+              >
+                <SelectTrigger className="h-12 rounded-xl">
+                  <SelectValue placeholder="Select complaint type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Stall">Stall</SelectItem>
+                  <SelectItem value="Event">Event</SelectItem>
+                  <SelectItem value="General">General</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          ) : (
-            <Card className="border-0 shadow-lg bg-white/60 backdrop-blur-xl rounded-3xl">
-              <CardContent className="p-12 text-center">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="p-6 bg-slate-100 rounded-3xl">
-                    <Calendar className="h-12 w-12 text-slate-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-slate-900 mb-2">No Events Available</h3>
-                    <p className="text-slate-600">There are currently no events scheduled. New events will appear here when available.</p>
-                  </div>
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-semibold">Description *</Label>
+              <Input
+                id="description"
+                name="description"
+                value={complaintFormData.description}
+                onChange={handleComplaintInputChange}
+                placeholder="Describe your complaint (minimum 10 characters)"
+                className="h-24 rounded-xl"
+                type="textarea"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsComplaintModalOpen(false);
+                setComplaintFormData({ type: "", description: "" });
+                setFormErrors({});
+              }}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmitComplaint}
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
+            >
+              {loading ? (
+                <div className="flex items-center">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  Submitting...
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+              ) : (
+                "Submit Complaint"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
