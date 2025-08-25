@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useUserAuth } from "../../contexts/UserAuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Calendar, Store, CheckCircle, AlertCircle, Loader2, ChevronDown, ChevronUp, MapPin, Users, FileText } from "lucide-react";
+import { Calendar, Store, CheckCircle, AlertCircle, Loader2, ChevronDown, ChevronUp, MapPin, Users, FileText, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { BaseUrl } from "@/sevice/Url";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Event {
   _id: string;
@@ -36,6 +37,19 @@ interface Stall {
   applications: { exhibitorId: string; status: string }[];
 }
 
+interface Complaint {
+  _id: string;
+  eventId: { name: string };
+  userId: { name: string };
+  userType: "Visitor" | "Exhibitor";
+  type: "Stall" | "Event" | "General";
+  description: string;
+  status: "Pending" | "Resolved";
+  resolutionNotes?: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+
 const UserStalls: React.FC = () => {
   const { user } = useUserAuth();
   const { toast } = useToast();
@@ -50,6 +64,7 @@ const UserStalls: React.FC = () => {
   const [success, setSuccess] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isComplaintModalOpen, setIsComplaintModalOpen] = useState(false);
+  const [isViewComplaintsModalOpen, setIsViewComplaintsModalOpen] = useState(false);
   const [selectedStallId, setSelectedStallId] = useState<string | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -68,6 +83,11 @@ const UserStalls: React.FC = () => {
   });
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [file, setFile] = useState<File | null>(null);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [complaintSearch, setComplaintSearch] = useState("");
+  const [complaintPage, setComplaintPage] = useState(1);
+  const [complaintTotalPages, setComplaintTotalPages] = useState(1);
+  const [complaintLoading, setComplaintLoading] = useState(false);
   const eventRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -140,7 +160,7 @@ const UserStalls: React.FC = () => {
 
       const responseData = await response.json();
       setCategories(responseData.data || []);
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || "Failed to fetch categories. Please try again.");
       toast({ variant: "destructive", title: "Error", description: err.message });
     } finally {
@@ -189,6 +209,45 @@ const UserStalls: React.FC = () => {
     }
   };
 
+  const fetchComplaints = async (page: number = 1, search: string = "") => {
+    setComplaintLoading(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("userToken");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(`${BaseUrl}/user/get-complaints`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          page,
+          limit: 10,
+          search,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to fetch complaints");
+      }
+
+      const responseData = await response.json();
+      setComplaints(responseData.data.docs || []);
+      setComplaintTotalPages(responseData.data.totalPages || 1);
+      setSuccess(responseData.message || "Complaints loaded successfully");
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch complaints");
+      toast({ variant: "destructive", title: "Error", description: err.message });
+    } finally {
+      setComplaintLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -199,6 +258,17 @@ const UserStalls: React.FC = () => {
       fetchStalls();
     }
   }, [selectedEvent, search, selectedCategory]);
+
+  useEffect(() => {
+    if (isViewComplaintsModalOpen) {
+      fetchComplaints(complaintPage, complaintSearch);
+    }
+  }, [isViewComplaintsModalOpen, complaintPage, complaintSearch]);
+
+  useEffect(() => {
+    // Reset page to 1 when search changes
+    setComplaintPage(1);
+  }, [complaintSearch]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -219,9 +289,7 @@ const UserStalls: React.FC = () => {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
+    setComplaintSearch(e.target.value);
   };
 
   const handleApply = (stallId: string) => {
@@ -382,12 +450,8 @@ const UserStalls: React.FC = () => {
     switch (status?.toLowerCase()) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "reserved":
-        return "bg-blue-100 text-blue-800";
-      case "confirmed":
+      case "resolved":
         return "bg-green-100 text-green-600";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -415,11 +479,12 @@ const UserStalls: React.FC = () => {
                   View Booking History
                 </Button>
               </Link>
-              <Link to="/user/complaints">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl">
-                  View Complaints
-                </Button>
-              </Link>
+              <Button
+                onClick={() => setIsViewComplaintsModalOpen(true)}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
+              >
+                View Complaints
+              </Button>
             </div>
           </div>
         </div>
@@ -587,7 +652,7 @@ const UserStalls: React.FC = () => {
                           <Button
                             onClick={() => handleApply(stall._id)}
                             disabled={stall.status !== "pending" || stall.applications.some(app => app.exhibitorId === user?._id)}
-                            className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl"
+                            className="w-full mt-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 Gallext-white rounded-xl"
                           >
                             {stall.applications.some(app => app.exhibitorId === user?._id)
                               ? "Already Applied"
@@ -824,7 +889,7 @@ const UserStalls: React.FC = () => {
               {loading ? (
                 <div className="flex items-center">
                   <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  Submitting...
+                  Sub submitting...
                 </div>
               ) : (
                 "Submit Complaint"
@@ -833,6 +898,258 @@ const UserStalls: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+{/* View Complaints Modal */}
+<Dialog open={isViewComplaintsModalOpen} onOpenChange={setIsViewComplaintsModalOpen}>
+  <DialogContent className="w-[95vw] max-w-[1000px] max-h-[90vh] overflow-hidden bg-gradient-to-br from-slate-50 to-white rounded-3xl border shadow-2xl ring-1 ring-gray-200/50">
+    <DialogHeader className="px-8 py-6 bg-gray-100 text-black rounded-t-3xl -mx-6 -mt-6">
+      <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center">
+        <div className="h-10 w-10 bg-black/20 backdrop-blur-sm rounded-xl flex items-center justify-center mr-4 ring-2 ring-white/30">
+          <FileText className="h-5 w-5 text-black" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium opacity-90">Complaint Management</div>
+          <div className="text-lg sm:text-xl font-bold">Your Complaints</div>
+        </div>
+      </DialogTitle>
+    </DialogHeader>
+    
+    <div className="overflow-y-auto max-h-[calc(90vh-180px)] px-6">
+      <div className="space-y-6 py-6">
+        {/* Search Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-100/50 rounded-2xl p-6 border border-blue-200/50 shadow-sm">
+          <div className="flex items-center mb-4">
+            <div className="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+              <Search className="h-4 w-4 text-white" />
+            </div>
+            <Label htmlFor="complaintSearch" className="text-lg font-bold text-gray-800">Search Complaints</Label>
+          </div>
+          <Input
+            id="complaintSearch"
+            placeholder="Search by description, type, or event name..."
+            value={complaintSearch}
+            onChange={(e) => setComplaintSearch(e.target.value)}
+            className="h-12 rounded-xl border-blue-200 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 bg-white/70 backdrop-blur-sm"
+          />
+        </div>
+
+        {/* Content Section */}
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+          {complaintLoading && (
+            <div className="flex flex-col items-center space-y-6 py-20">
+              <div className="relative">
+                <Loader2 className="h-16 w-16 animate-spin text-blue-600" />
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 animate-pulse"></div>
+              </div>
+              <div className="space-y-2 text-center">
+                <p className="text-lg font-semibold text-gray-700">Loading your complaints...</p>
+                <p className="text-sm text-gray-500">Please wait while we fetch your data</p>
+              </div>
+            </div>
+          )}
+
+          {!complaintLoading && complaints.length === 0 && (
+            <div className="text-center py-20">
+              <div className="flex flex-col items-center space-y-6">
+                <div className="h-20 w-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center ring-8 ring-blue-50">
+                  <FileText className="h-10 w-10 text-blue-400" />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xl font-semibold text-gray-700">No complaints found</p>
+                  <p className="text-sm text-gray-500 max-w-sm mx-auto">You haven't submitted any complaints yet, or none match your search criteria.</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!complaintLoading && complaints.length > 0 && (
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden lg:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100/80 hover:from-gray-100 hover:to-gray-100">
+                      <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Event</TableHead>
+                      <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Type</TableHead>
+                      <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Description</TableHead>
+                      <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Status</TableHead>
+                      <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Created</TableHead>
+                      <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Resolved</TableHead>
+                      <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {complaints.map((complaint) => (
+                      <TableRow key={complaint._id} className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-300 border-b border-gray-100/50">
+                        <TableCell className="py-4 px-6">
+                          <div className="font-semibold text-gray-900 max-w-32 truncate">
+                            {complaint.eventId.name}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                            {complaint.type}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <div className="max-w-xs">
+                            <p className="text-gray-800 line-clamp-2 text-sm leading-relaxed truncate">
+                              {complaint.description}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <Badge className={`${getStatusColor(complaint.status)} rounded-full px-3 py-1 text-xs font-semibold`}>
+                            {complaint.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <div className="text-sm text-gray-700 font-medium">
+                            {new Date(complaint.createdAt).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <div className="text-sm text-gray-700">
+                            {complaint.resolvedAt
+                              ? new Date(complaint.resolvedAt).toLocaleDateString("en-GB", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                })
+                              : <span className="text-gray-400 italic">N/A</span>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 px-6">
+                          <div className="max-w-xs text-sm text-gray-700 truncate">
+                            {complaint.resolutionNotes || <span className="text-gray-400 italic">N/A</span>}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="lg:hidden p-4 space-y-4">
+                {complaints.map((complaint) => (
+                  <div key={complaint._id} className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                    <div className="p-6 space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 text-lg truncate">{complaint.eventId.name}</h3>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                              {complaint.type}
+                            </span>
+                            <Badge className={`${getStatusColor(complaint.status)} rounded-full px-3 py-1 text-xs font-semibold`}>
+                              {complaint.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50/50 rounded-xl p-4">
+                        <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Description</label>
+                        <p className="text-gray-800 mt-1 leading-relaxed">{complaint.description}</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Created At</label>
+                          <p className="text-gray-800 font-medium mt-1">
+                            {new Date(complaint.createdAt).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Resolved At</label>
+                          <p className="text-gray-800 font-medium mt-1">
+                            {complaint.resolvedAt
+                              ? new Date(complaint.resolvedAt).toLocaleDateString("en-GB", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                })
+                              : <span className="text-gray-400 italic">N/A</span>}
+                          </p>
+                        </div>
+                      </div>
+
+                      {complaint.resolutionNotes && (
+                        <div className="pt-4 border-t border-gray-200/50">
+                          <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Resolution Notes</label>
+                          <div className="bg-green-50/50 rounded-xl p-3 mt-2">
+                            <p className="text-green-800 text-sm">{complaint.resolutionNotes}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {!complaintLoading && complaints.length > 0 && (
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-2xl p-6 border border-gray-200/50 shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <Button
+                onClick={() => setComplaintPage((prev) => Math.max(prev - 1, 1))}
+                disabled={complaintPage === 1}
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed h-11 px-6"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
+              </Button>
+              
+              <div className="flex items-center bg-white rounded-xl px-6 py-3 shadow-sm border border-gray-200">
+                <span className="text-sm font-semibold text-gray-700">
+                  Page {complaintPage} of {complaintTotalPages}
+                </span>
+              </div>
+              
+              <Button
+                onClick={() => setComplaintPage((prev) => prev + 1)}
+                disabled={complaintPage === complaintTotalPages}
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed h-11 px-6"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <span className="sm:hidden">Next</span>
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+
+    <DialogFooter className="px-6 py-4 bg-gray-50/50 rounded-b-3xl -mx-6 -mb-6 border-t border-gray-200/50">
+      <Button
+        variant="outline"
+        onClick={() => {
+          setIsViewComplaintsModalOpen(false);
+          setComplaintSearch("");
+          setComplaintPage(1);
+          setComplaints([]);
+        }}
+        className="w-full sm:w-auto rounded-xl border-gray-300 hover:bg-gray-50 h-11 px-8 font-medium"
+      >
+        Close
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </div>
   );
 };

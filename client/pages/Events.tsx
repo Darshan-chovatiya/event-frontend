@@ -46,6 +46,8 @@ import {
   DollarSign,
   Mic,
   FileText,
+  Share2,
+  Image,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { AmazonAws, BaseUrl } from "@/sevice/Url";
@@ -1428,7 +1430,7 @@ const Events: React.FC = () => {
                           </Button>
                         </TableCell>
                         <TableCell className="py-6 px-6">
-                          <Schedules event={event} onSuccess={fetchEvents} />Schedule
+                          <Schedules event={event} onSuccess={fetchEvents} />
                         </TableCell>
                         <TableCell className="text-right py-6 px-6">
                           <div className="flex justify-end gap-2">
@@ -1474,221 +1476,524 @@ const Events: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-          <DialogContent className="w-[95vw] max-w-[700px] max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md rounded-2xl border-0 shadow-2xl">
-            <DialogHeader className="pb-4 border-b border-gray-100">
-              <DialogTitle className="text-2xl font-bold flex items-center text-gray-900">
-                <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                  <Eye className="h-4 w-4 text-white" />
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-hidden rounded-3xl border shadow-2xl ring-1 ring-gray-200/50">
+          <DialogHeader className="px-8 py-6 bg-gray-100 rounded-t-3xl -mx-6 -mt-6">
+            <DialogTitle className="text-2xl font-bold flex items-center">
+              <div className="h-10 w-10 bg-black/20 backdrop-blur-sm rounded-xl flex items-center justify-center mr-4 ring-2 ring-white/30">
+                <Eye className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="text-sm font-medium opacity-90">Event Details</div>
+                <div className="text-xl font-bold">{currentViewEvent?.name}</div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)] px-6">
+            <div className="space-y-6 py-6">
+              {/* Basic Information */}
+              <div className="bg-gradient-to-r from-blue-50/50 to-blue-100/50/50 rounded-2xl p-6 border border-blue-200/50 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                    <Calendar className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">Event Information</h3>
                 </div>
-                View Event: {currentViewEvent?.name}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 p-6">
-              <div className="bg-blue-50/50 rounded-xl p-4 space-y-2">
-                <h3 className="text-lg font-semibold">Basic Information</h3>
-                <p><strong>Name:</strong> {currentViewEvent?.name}</p>
-                <p><strong>Date:</strong> {formatDate(currentViewEvent?.date || '')}</p>
-                <p><strong>Start Time:</strong> {formatTimeForDisplay(currentViewEvent?.startTime || '')}</p>
-                <p><strong>End Time:</strong> {formatTimeForDisplay(currentViewEvent?.endTime || '')}</p>
-              </div>
-              <div className="bg-emerald-50/50 rounded-xl p-4 space-y-2">
-                <h3 className="text-lg font-semibold">Venue Information</h3>
-                <p><strong>Venue Name:</strong> {currentViewEvent?.venue.name}</p>
-                <p><strong>Address:</strong> {currentViewEvent?.venue.address}</p>
-                <p><strong>Description:</strong> {currentViewEvent?.description}</p>
-              </div>
-              <div className="bg-purple-50/50 rounded-xl p-4 space-y-2">
-                <h3 className="text-lg font-semibold">Social Media</h3>
-                <p><strong>Facebook:</strong> {currentViewEvent?.socialMedia.facebook}</p>
-                <p><strong>Twitter:</strong> {currentViewEvent?.socialMedia.twitter}</p>
-                <p><strong>LinkedIn:</strong> {currentViewEvent?.socialMedia.linkdin}</p>
-              </div>
-              <div className="bg-orange-50/50 rounded-xl p-4 space-y-2">
-                <h3 className="text-lg font-semibold">Images</h3>
-                {currentViewEvent?.mapUrl && <img src={`${AmazonAws}/${currentViewEvent?.mapUrl}`} alt="Map" className="w-48" />}
-                {currentViewEvent?.floorPlanUrl && <img src={`${AmazonAws}/${currentViewEvent?.floorPlanUrl}`} alt="Floor Plan" className="w-48" />}
-              </div>
-              <div className="bg-yellow-50/50 rounded-xl p-4 space-y-2">
-                <h3 className="text-lg font-semibold flex items-center">
-                  <DollarSign className="h-5 w-5 mr-2" /> Sponsors
-                </h3>
-                {viewSponsors.map((sponsor, index) => (
-                  <div key={index} className="bg-white p-2 rounded-md">
-                    <p><strong>Name:</strong> {sponsor.name}</p>
-                    <p><strong>Description:</strong> {sponsor.description}</p>
-                    {sponsor.logoUrl && <img src={`${AmazonAws}/${sponsor.logoUrl}`} alt="Logo" className="w-20 h-20" />}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Event Name</label>
+                      <p className="text-gray-900 font-semibold mt-1">{currentViewEvent?.name}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Date</label>
+                      <p className="text-gray-900 font-semibold mt-1">{formatDate(currentViewEvent?.date || '')}</p>
+                    </div>
                   </div>
-                ))}
-                {viewSponsors.length === 0 && <p>No sponsors</p>}
-              </div>
-              <div className="bg-pink-50/50 rounded-xl p-4 space-y-2">
-                <h3 className="text-lg font-semibold flex items-center">
-                  <Mic className="h-5 w-5 mr-2" /> Speakers
-                </h3>
-                {viewSpeakers.map((speaker, index) => (
-                  <div key={index} className="bg-white p-2 rounded-md">
-                    <p><strong>Name:</strong> {speaker.name}</p>
-                    <p><strong>Bio:</strong> {speaker.bio}</p>
-                    <p><strong>Designation:</strong> {speaker.designation}</p>
-                    {speaker.profilePicture && <img src={`${AmazonAws}/${speaker.profilePicture}`} alt="Profile" className="w-24" />}
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Start Time</label>
+                      <p className="text-gray-900 font-semibold mt-1">{formatTimeForDisplay(currentViewEvent?.startTime || '')}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">End Time</label>
+                      <p className="text-gray-900 font-semibold mt-1">{formatTimeForDisplay(currentViewEvent?.endTime || '')}</p>
+                    </div>
                   </div>
-                ))}
-                {viewSpeakers.length === 0 && <p>No speakers</p>}
+                </div>
+              </div>
+
+              {/* Venue Information */}
+              <div className="bg-gradient-to-r from-emerald-50/50 to-emerald-100/50/50 rounded-2xl p-6 border border-emerald-200/50 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="h-8 w-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3">
+                    <MapPin className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">Venue Details</h3>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Venue Name</label>
+                    <p className="text-gray-900 font-semibold mt-1">{currentViewEvent?.venue.name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Address</label>
+                    <p className="text-gray-900 mt-1">{currentViewEvent?.venue.address}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Description</label>
+                    <p className="text-gray-700 mt-1 leading-relaxed">{currentViewEvent?.description}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Media */}
+              <div className="bg-gradient-to-r from-violet-50/50 to-purple-100/50 rounded-2xl p-6 border border-purple-200/50 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="h-8 w-8 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
+                    <Share2 className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">Social Media</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+                    <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Facebook</label>
+                    <p className="text-gray-900 mt-1 break-all">{currentViewEvent?.socialMedia.facebook}</p>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+                    <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Twitter</label>
+                    <p className="text-gray-900 mt-1 break-all">{currentViewEvent?.socialMedia.twitter}</p>
+                  </div>
+                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+                    <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">LinkedIn</label>
+                    <p className="text-gray-900 mt-1 break-all">{currentViewEvent?.socialMedia.linkdin}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Images */}
+              <div className="bg-gradient-to-r from-orange-50/50 to-amber-100/50/50 rounded-2xl p-6 border border-orange-200/50 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="h-8 w-8 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+                    <Image className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">Event Images</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {currentViewEvent?.mapUrl && (
+                    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+                      <label className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3 block">Map</label>
+                      <img 
+                        src={`${AmazonAws}/${currentViewEvent?.mapUrl}`} 
+                        alt="Map" 
+                        className="w-full h-48 object-cover rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200" 
+                      />
+                    </div>
+                  )}
+                  {currentViewEvent?.floorPlanUrl && (
+                    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+                      <label className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3 block">Floor Plan</label>
+                      <img 
+                        src={`${AmazonAws}/${currentViewEvent?.floorPlanUrl}`} 
+                        alt="Floor Plan" 
+                        className="w-full h-48 object-cover rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200" 
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sponsors */}
+              <div className="bg-gradient-to-r from-yellow-50/50 to-yellow-100/50 rounded-2xl p-6 border border-yellow-200/50 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="h-8 w-8 bg-yellow-500 rounded-lg flex items-center justify-center mr-3">
+                    <DollarSign className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">Event Sponsors</h3>
+                </div>
+                <div className="space-y-4">
+                  {viewSponsors.map((sponsor, index) => (
+                    <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-white/60 hover:shadow-md transition-shadow duration-200">
+                      <div className="flex items-start space-x-4">
+                        {sponsor.logoUrl && (
+                          <div className="flex-shrink-0">
+                            <img 
+                              src={`${AmazonAws}/${sponsor.logoUrl}`} 
+                              alt="Sponsor Logo" 
+                              className="w-16 h-16 object-contain rounded-lg bg-white shadow-sm" 
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-lg font-semibold text-gray-900 mb-2">{sponsor.name}</h4>
+                          <p className="text-gray-700 leading-relaxed">{sponsor.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {viewSponsors.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-lg">No sponsors available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Speakers */}
+              <div className="bg-gradient-to-r from-pink-50/50 to-rose-100/50 rounded-2xl p-6 border border-pink-200/50 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="h-8 w-8 bg-pink-500 rounded-lg flex items-center justify-center mr-3">
+                    <Mic className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">Featured Speakers</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {viewSpeakers.map((speaker, index) => (
+                    <div key={index} className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-white/60 hover:shadow-md transition-shadow duration-200">
+                      <div className="flex items-start space-x-4">
+                        {speaker.profilePicture && (
+                          <div className="flex-shrink-0">
+                            <img 
+                              src={`${AmazonAws}/${speaker.profilePicture}`} 
+                              alt="Speaker Profile" 
+                              className="w-16 h-16 object-cover rounded-full shadow-md ring-2 ring-white" 
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-lg font-semibold text-gray-900">{speaker.name}</h4>
+                          <p className="text-sm font-medium text-pink-600 mb-2">{speaker.designation}</p>
+                          <p className="text-gray-700 text-sm leading-relaxed">{speaker.bio}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {viewSpeakers.length === 0 && (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      <Mic className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p className="text-lg">No speakers announced yet</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-        <Dialog open={isComplaintsOpen} onOpenChange={setIsComplaintsOpen}>
-          <DialogContent className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md rounded-2xl border-0 shadow-2xl">
-            <DialogHeader className="pb-4 border-b border-gray-100">
-              <DialogTitle className="text-2xl font-bold flex items-center text-gray-900">
-                <div className="h-8 w-8 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center mr-3">
-                  <FileText className="h-4 w-4 text-white" />
-                </div>
-                Complaints for {currentComplaintEvent?.name}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="p-6 space-y-6">
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isComplaintsOpen} onOpenChange={setIsComplaintsOpen}>
+        <DialogContent className="w-[95vw] max-w-[1200px] max-h-[90vh] overflow-hidden bg-gradient-to-br from-slate-50 to-white rounded-3xl border shadow-2xl ring-1 ring-gray-200/50">
+          <DialogHeader className="px-8 py-6 bg-gray-100 text-black rounded-t-3xl -mx-6 -mt-6">
+            <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center">
+              <div className="h-10 w-10 bg-black/20 backdrop-blur-sm rounded-xl flex items-center justify-center mr-4 ring-2 ring-black/30">
+                <FileText className="h-5 w-5 text-black" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium opacity-90">Event Complaints</div>
+                <div className="text-lg sm:text-xl font-bold truncate">{currentComplaintEvent?.name}</div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)] px-6">
+            <div className="space-y-6 py-6">
               {error && (
-                <Alert variant="destructive" className="bg-red-50/80 backdrop-blur-sm border-red-200 rounded-xl">
+                <Alert variant="destructive" className="bg-gradient-to-r from-red-50 to-red-100/50 backdrop-blur-sm border border-red-200 rounded-2xl shadow-sm">
                   <AlertCircle className="h-5 w-5" />
                   <AlertDescription className="text-red-700 font-medium">{error}</AlertDescription>
                 </Alert>
               )}
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b border-gray-100 bg-gray-50/50 hover:bg-gray-50/70">
-                      <TableHead className="font-bold text-gray-700 py-4 px-4">User</TableHead>
-                      <TableHead className="font-bold text-gray-700 py-4 px-4">Type</TableHead>
-                      <TableHead className="font-bold text-gray-700 py-4 px-4">Description</TableHead>
-                      <TableHead className="font-bold text-gray-700 py-4 px-4">Status</TableHead>
-                      <TableHead className="font-bold text-gray-700 py-4 px-4">Created At</TableHead>
-                      <TableHead className="font-bold text-gray-700 py-4 px-4">Resolved At</TableHead>
-                      <TableHead className="text-right font-bold text-gray-700 py-4 px-4">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-16">
-                          <div className="flex flex-col items-center space-y-4">
-                            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                            <p className="text-gray-500 font-medium">Loading complaints...</p>
-                          </div>
-                        </TableCell>
+
+              {/* Desktop Table View */}
+              <div className="hidden lg:block bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100/80 hover:from-gray-100 hover:to-gray-100">
+                        <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">User</TableHead>
+                        <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Type</TableHead>
+                        <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Description</TableHead>
+                        <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Status</TableHead>
+                        <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Created</TableHead>
+                        <TableHead className="font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Resolved</TableHead>
+                        <TableHead className="text-right font-bold text-gray-800 py-4 px-6 text-sm uppercase tracking-wide">Actions</TableHead>
                       </TableRow>
-                    ) : complaints.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-16">
-                          <div className="flex flex-col items-center space-y-4">
-                            <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center">
-                              <FileText className="h-8 w-8 text-gray-400" />
-                            </div>
-                            <div className="space-y-2">
-                              <p className="text-lg font-medium text-gray-600">No complaints found</p>
-                              <p className="text-sm text-gray-500">No complaints have been submitted for this event</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      complaints.map((complaint) => (
-                        <TableRow key={complaint._id} className="hover:bg-yellow-50/30 transition-all duration-200 border-b border-gray-50">
-                          <TableCell className="py-4 px-4">{complaint.userId.name}</TableCell>
-                          <TableCell className="py-4 px-4">{complaint.type}</TableCell>
-                          <TableCell className="py-4 px-4 max-w-xs truncate">{complaint.description}</TableCell>
-                          <TableCell className="py-4 px-4">
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getComplaintStatusColor(complaint.status)}`}>
-                              {complaint.status}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-4 px-4">
-                            {formatDate(complaint.createdAt)}
-                          </TableCell>
-                          <TableCell className="py-4 px-4">
-                            {complaint.resolvedAt ? formatDate(complaint.resolvedAt) : "Not resolved"}
-                          </TableCell>
-                          <TableCell className="text-right py-4 px-4">
-                            {complaint.status === "Pending" ? (
-                              resolvingComplaintId === complaint._id ? (
-                                <div className="flex flex-col items-end gap-2">
-                                  <Input
-                                    value={resolutionNotes}
-                                    onChange={(e) => setResolutionNotes(e.target.value)}
-                                    placeholder="Enter resolution notes"
-                                    className="h-10 rounded-xl"
-                                  />
-                                  <div className="flex gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setResolvingComplaintId(null)}
-                                      className="rounded-xl"
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleResolveComplaint(complaint._id)}
-                                      className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white rounded-xl"
-                                      disabled={loading}
-                                    >
-                                      {loading ? "Resolving..." : "Resolve"}
-                                    </Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setResolvingComplaintId(complaint._id)}
-                                  className="h-10 w-10 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-xl"
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                              )
-                            ) : (
-                              <div className="text-sm text-gray-600">
-                                {complaint.resolutionNotes || "Resolved"}
+                    </TableHeader>
+                    <TableBody>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-20">
+                            <div className="flex flex-col items-center space-y-4">
+                              <div className="relative">
+                                <div className="animate-spin rounded-full h-16 w-16 border-4 border-gradient-to-r from-orange-400 to-red-400 border-t-transparent"></div>
+                                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-100 to-red-100 animate-pulse"></div>
                               </div>
-                            )}
+                              <div className="space-y-2">
+                                <p className="text-lg font-semibold text-gray-700">Loading complaints...</p>
+                                <p className="text-sm text-gray-500">Please wait while we fetch the data</p>
+                              </div>
+                            </div>
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : complaints.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-20">
+                            <div className="flex flex-col items-center space-y-6">
+                              <div className="h-20 w-20 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center ring-8 ring-orange-50">
+                                <FileText className="h-10 w-10 text-orange-400" />
+                              </div>
+                              <div className="space-y-2">
+                                <p className="text-xl font-semibold text-gray-700">No complaints found</p>
+                                <p className="text-sm text-gray-500 max-w-sm">No complaints have been submitted for this event yet. This is great news!</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        complaints.map((complaint) => (
+                          <TableRow key={complaint._id} className="hover:bg-gradient-to-r hover:from-orange-50/50 hover:to-amber-50/50 transition-all duration-300 border-b border-gray-100/50">
+                            <TableCell className="py-4 px-6">
+                              <div className="font-semibold text-gray-900">{complaint.userId.name}</div>
+                            </TableCell>
+                            <TableCell className="py-4 px-6">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                {complaint.type}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4 px-6">
+                              <div className="max-w-xs">
+                                <p className="text-gray-800 line-clamp-2 text-sm leading-relaxed">{complaint.description}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4 px-6">
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getComplaintStatusColor(complaint.status)}`}>
+                                {complaint.status}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4 px-6">
+                              <div className="text-sm text-gray-700 font-medium">
+                                {formatDate(complaint.createdAt)}
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4 px-6">
+                              <div className="text-sm text-gray-700">
+                                {complaint.resolvedAt ? formatDate(complaint.resolvedAt) : (
+                                  <span className="text-gray-400 italic">Not resolved</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right py-4 px-6">
+                              {complaint.status === "Pending" ? (
+                                resolvingComplaintId === complaint._id ? (
+                                  <div className="flex flex-col items-end gap-3">
+                                    <Input
+                                      value={resolutionNotes}
+                                      onChange={(e) => setResolutionNotes(e.target.value)}
+                                      placeholder="Enter resolution notes"
+                                      className="h-10 rounded-xl border-orange-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
+                                    />
+                                    <div className="flex gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setResolvingComplaintId(null)}
+                                        className="rounded-xl border-gray-300 hover:bg-gray-50 h-9"
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleResolveComplaint(complaint._id)}
+                                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-md h-9"
+                                        disabled={loading}
+                                      >
+                                        {loading ? "Resolving..." : "Resolve"}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setResolvingComplaintId(complaint._id)}
+                                    className="h-10 w-10 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-xl border border-transparent hover:border-green-200"
+                                  >
+                                    <CheckCircle className="h-5 w-5" />
+                                  </Button>
+                                )
+                              ) : (
+                                <div className="text-sm text-gray-600 max-w-32 truncate">
+                                  {complaint.resolutionNotes || (
+                                    <span className="text-green-600 font-medium">Resolved</span>
+                                  )}
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
-              {complaints.length > 0 && (
-                <div className="flex justify-center items-center gap-2 mt-4">
-                  <Button
-                    variant="outline"
-                    disabled={complaintPage === 1}
-                    onClick={() => setComplaintPage(complaintPage - 1)}
-                    className="border-gray-200 hover:bg-gray-50 rounded-xl h-10 px-4"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="flex items-center space-x-2 bg-gray-100 rounded-xl px-4 py-2">
-                    <span className="text-sm font-medium text-gray-600">
-                      Page {complaintPage} of {complaintTotalPages}
-                    </span>
+
+              {/* Mobile Card View */}
+              <div className="lg:hidden space-y-4">
+                {loading ? (
+                  <div className="text-center py-20">
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-500 border-t-transparent"></div>
+                      <div className="space-y-2">
+                        <p className="text-lg font-semibold text-gray-700">Loading complaints...</p>
+                        <p className="text-sm text-gray-500">Please wait while we fetch the data</p>
+                      </div>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    disabled={complaintPage === complaintTotalPages}
-                    onClick={() => setComplaintPage(complaintPage + 1)}
-                    className="border-gray-200 hover:bg-gray-50 rounded-xl h-10 px-4"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                ) : complaints.length === 0 ? (
+                  <div className="text-center py-16">
+                    <div className="flex flex-col items-center space-y-6">
+                      <div className="h-20 w-20 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full flex items-center justify-center ring-8 ring-orange-50">
+                        <FileText className="h-10 w-10 text-orange-400" />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xl font-semibold text-gray-700">No complaints found</p>
+                        <p className="text-sm text-gray-500 max-w-sm mx-auto">No complaints have been submitted for this event yet. This is great news!</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  complaints.map((complaint) => (
+                    <div key={complaint._id} className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                      <div className="p-6 space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 text-lg">{complaint.userId.name}</h3>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                {complaint.type}
+                              </span>
+                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getComplaintStatusColor(complaint.status)}`}>
+                                {complaint.status}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gray-50/50 rounded-xl p-4">
+                          <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Description</label>
+                          <p className="text-gray-800 mt-1 leading-relaxed">{complaint.description}</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Created</label>
+                            <p className="text-gray-800 font-medium mt-1">{formatDate(complaint.createdAt)}</p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Resolved</label>
+                            <p className="text-gray-800 font-medium mt-1">
+                              {complaint.resolvedAt ? formatDate(complaint.resolvedAt) : (
+                                <span className="text-gray-400 italic">Not resolved</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        {complaint.status === "Pending" ? (
+                          resolvingComplaintId === complaint._id ? (
+                            <div className="space-y-3 pt-4 border-t border-gray-200/50">
+                              <Input
+                                value={resolutionNotes}
+                                onChange={(e) => setResolutionNotes(e.target.value)}
+                                placeholder="Enter resolution notes"
+                                className="rounded-xl border-orange-200 focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setResolvingComplaintId(null)}
+                                  className="flex-1 rounded-xl border-gray-300 hover:bg-gray-50"
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={() => handleResolveComplaint(complaint._id)}
+                                  className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-md"
+                                  disabled={loading}
+                                >
+                                  {loading ? "Resolving..." : "Resolve"}
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="pt-4 border-t border-gray-200/50">
+                              <Button
+                                onClick={() => setResolvingComplaintId(complaint._id)}
+                                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl shadow-md"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Mark as Resolved
+                              </Button>
+                            </div>
+                          )
+                        ) : complaint.resolutionNotes ? (
+                          <div className="pt-4 border-t border-gray-200/50">
+                            <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Resolution Notes</label>
+                            <div className="bg-green-50/50 rounded-xl p-3 mt-2">
+                              <p className="text-green-800 text-sm">{complaint.resolutionNotes}</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="pt-4 border-t border-gray-200/50">
+                            <div className="flex items-center text-green-600">
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              <span className="font-medium">Complaint Resolved</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Pagination */}
+              {complaints.length > 0 && (
+                <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-6">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      disabled={complaintPage === 1}
+                      onClick={() => setComplaintPage(complaintPage - 1)}
+                      className="border-gray-300 hover:bg-gray-50 rounded-xl h-11 px-4 disabled:opacity-50"
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-2" />
+                      <span className="hidden sm:inline">Previous</span>
+                    </Button>
+                    
+                    <div className="flex items-center bg-gradient-to-r from-orange-100 to-amber-100 rounded-xl px-6 py-3 mx-4">
+                      <span className="text-sm font-semibold text-gray-700">
+                        Page {complaintPage} of {complaintTotalPages}
+                      </span>
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      disabled={complaintPage === complaintTotalPages}
+                      onClick={() => setComplaintPage(complaintPage + 1)}
+                      className="border-gray-300 hover:bg-gray-50 rounded-xl h-11 px-4 disabled:opacity-50"
+                    >
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );

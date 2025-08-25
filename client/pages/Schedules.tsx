@@ -60,8 +60,8 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
   const [formData, setFormData] = useState<ScheduleFormData>({
     eventId: event._id,
     isCommon: true,
-    date: "",
-    activities: [{ startTime: "", endTime: "", title: "", description: "", speakerId: ""}],
+    date: event.date, // Initialize with event.date (e.g., "2025-08-23")
+    activities: [{ startTime: "", endTime: "", title: "", description: "", speakerId: "" }],
   });
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
@@ -99,8 +99,11 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
 
     if (isDialogOpen) {
       fetchSpeakers();
+      if (!formData.isCommon) {
+        setFormData((prev) => ({ ...prev, date: event.date }));
+      }
     }
-  }, [isDialogOpen, event._id]);
+  }, [isDialogOpen, event._id, event.date, formData.isCommon]);
 
   const validateField = (index: number, field: string, value: string) => {
     const errors: { [key: string]: string } = { ...formErrors };
@@ -142,16 +145,12 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
   const validateForm = () => {
     const errors: { [key: string]: string } = {};
 
-    if (!formData.isCommon && !formData.date) {
-      errors.date = "Date is required for date-specific schedules";
-    } else if (formData.date) {
-      const scheduleDate = new Date(formData.date);
-      const eventDate = new Date(event.date);
-      if (isNaN(scheduleDate.getTime()) || 
-          scheduleDate < new Date(eventDate.setHours(0, 0, 0, 0)) || 
-          scheduleDate > new Date(eventDate.setHours(23, 59, 59, 999))) {
-        errors.date = "Schedule date must be within event date";
-      }
+    if (!formData.isCommon && formData.date !== event.date) {
+      errors.date = `Date must be ${new Date(event.date).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })}`;
     }
 
     formData.activities.forEach((activity, index) => {
@@ -184,7 +183,7 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
   const addActivity = () => {
     setFormData({
       ...formData,
-      activities: [...formData.activities, { startTime: "", endTime: "", title: "", description: "", speakerId: ""}],
+      activities: [...formData.activities, { startTime: "", endTime: "", title: "", description: "", speakerId: "" }],
     });
   };
 
@@ -195,10 +194,11 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
     });
     const errors = { ...formErrors };
     Object.keys(errors).forEach((key) => {
-      if (key.startsWith(`startTime-${index}`) || 
-          key.startsWith(`endTime-${index}`) || 
-          key.startsWith(`title-${index}`) ||
-          key.startsWith(`speakerId-${index}`)
+      if (
+        key.startsWith(`startTime-${index}`) ||
+        key.startsWith(`endTime-${index}`) ||
+        key.startsWith(`title-${index}`) ||
+        key.startsWith(`speakerId-${index}`)
       ) {
         delete errors[key];
       }
@@ -237,7 +237,7 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
         setFormData({
           eventId: event._id,
           isCommon: true,
-          date: "",
+          date: event.date, // Reset to event.date
           activities: [{ startTime: "", endTime: "", title: "", description: "", speakerId: "" }],
         });
         setFormErrors({});
@@ -260,15 +260,22 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
     }
   };
 
+  // Format event.date to DD/MM/YYYY (e.g., 23/08/2025)
+  const formattedEventDate = new Date(event.date).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-xl transition-all duration-200"
+          className="h-10 w-[100px] text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-xl transition-all duration-200"
         >
-          <Calendar className="h-4 w-4" />
+          <Calendar className="h-4 w-4" />Schedule
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-[700px] max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-md rounded-2xl border-0 shadow-2xl">
@@ -301,7 +308,7 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
                 id="isCommon"
                 checked={formData.isCommon}
                 onCheckedChange={(checked) =>
-                  setFormData({ ...formData, isCommon: checked, date: checked ? "" : formData.date })
+                  setFormData({ ...formData, isCommon: checked, date: checked ? "" : event.date })
                 }
               />
               <Label htmlFor="isCommon" className="text-gray-700 font-semibold">
@@ -310,18 +317,12 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
             </div>
             {!formData.isCommon && (
               <div className="space-y-2">
-                <Label htmlFor="date" className="text-gray-700 font-semibold">
+                <Label className="text-gray-700 font-semibold">
                   Schedule Date <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={`h-12 rounded-xl border-2 transition-all duration-200 ${
-                    formErrors.date ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-blue-500"
-                  } focus:ring-4 focus:ring-blue-500/20`}
-                />
+                <div className="h-12 flex items-center rounded-xl border-2 border-gray-200 bg-gray-100 px-3 text-gray-700">
+                  {formattedEventDate}
+                </div>
               </div>
             )}
             {formData.activities.map((activity, index) => (
@@ -400,10 +401,10 @@ const Schedules: React.FC<SchedulesProps> = ({ event, onSuccess }) => {
                       onValueChange={(value) => handleInputChange(index, "speakerId", value)}
                     >
                       <SelectTrigger className="h-12 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20">
-                        <SelectValue placeholder="Select a speaker " />
+                        <SelectValue placeholder="Select a speaker" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem> No speaker</SelectItem>
+                        <SelectItem >No speaker</SelectItem>
                         {speakers.map((speaker) => (
                           <SelectItem key={speaker._id} value={speaker._id}>
                             {speaker.name}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useUserAuth } from "../../contexts/UserAuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, Calendar, Heart, Eye, CheckCircle, AlertCircle } from "lucide-react";
+import { Users, Calendar, Heart, Eye, CheckCircle, AlertCircle, Star, Building, UserCheck, MapPin, Clock } from "lucide-react";
 import { BaseUrl } from "@/sevice/Url";
 
 interface Stat {
@@ -11,10 +11,22 @@ interface Stat {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+interface Event {
+  _id: string;
+  name: string;
+  description: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  venue: { name: string; address: string };
+  mapUrl?: string;
+}
+
 const UserDashboard: React.FC = () => {
   const { user } = useUserAuth();
   const [stats, setStats] = useState<Stat[]>([]);
-  const [data, setData] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [stallApplications, setStallApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -36,7 +48,7 @@ const UserDashboard: React.FC = () => {
         throw new Error("No authentication token found");
       }
 
-      const response = await fetch(`${BaseUrl}/user/whoAmI`, {
+      const response = await fetch(`${BaseUrl}/user/get-statistics`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -50,34 +62,33 @@ const UserDashboard: React.FC = () => {
       }
 
       const responseData = await response.json();
-      const userData = responseData.data;
+      const statsData = responseData.data.counts;
+      const eventsData = responseData.data.upcomingEvents || [];
+      const stallApps = responseData.data.stallApplications || [];
+
+      const newStats: Stat[] = [
+        { title: "Total Leads", value: statsData.totalLeads, icon: Users },
+        { title: "Exhibitor Leads", value: statsData.exhibitorLeads, icon: Building },
+        { title: "Visitor Leads", value: statsData.visitorLeads, icon: UserCheck },
+        { title: "Total Favorites", value: statsData.totalFavorites, icon: Heart },
+        { title: "Session Favorites", value: statsData.sessionFavorites, icon: Calendar },
+        { title: "Exhibitor Favorites", value: statsData.exhibitorFavorites, icon: Building },
+        { title: "Visitor Favorites", value: statsData.visitorFavorites, icon: UserCheck },
+        { title: "Stall Favorites", value: statsData.stallFavorites, icon: Star },
+      ];
 
       if (user.role === "exhibitor") {
-        const newStats: Stat[] = [
-          {
-            title: "Stalls",
-            value: userData.stall?.length || 0,
-            icon: Users,
-          },
-          {
-            title: "Events",
-            value: userData.stall?.filter((s: any) => s.status === "confirmed").length || 0,
-            icon: Calendar,
-          },
-        ];
-        setStats(newStats);
-        setData(userData.stall || []);
-      } else {
-        const newStats: Stat[] = [
-          {
-            title: "Favorites",
-            value: (userData.favorites?.attendees?.length || 0) + (userData.favorites?.exhibitors?.length || 0),
-            icon: Heart,
-          },
-        ];
-        setStats(newStats);
-        setData([...(userData.favorites?.attendees || []), ...(userData.favorites?.exhibitors || [])]);
+        newStats.push(
+          { title: "Total Stalls Applied", value: statsData.totalStallApplied, icon: Eye },
+          { title: "Stalls Accepted", value: statsData.stallsAccepted, icon: CheckCircle }
+        );
       }
+
+      newStats.push({ title: "Upcoming Events", value: statsData.upcomingEvents, icon: Calendar });
+
+      setStats(newStats.filter(stat => stat.value > 0));
+      setUpcomingEvents(eventsData);
+      setStallApplications(stallApps);
       setSuccess("Data loaded successfully");
     } catch (err: any) {
       setError(err.message || "Failed to fetch data. Please try again.");
@@ -94,6 +105,8 @@ const UserDashboard: React.FC = () => {
     const colors = [
       { bg: "bg-blue-50", border: "border-blue-100", icon: "text-blue-600", accent: "bg-blue-500" },
       { bg: "bg-emerald-50", border: "border-emerald-100", icon: "text-emerald-600", accent: "bg-emerald-500" },
+      { bg: "bg-purple-50", border: "border-purple-100", icon: "text-purple-600", accent: "bg-purple-500" },
+      { bg: "bg-indigo-50", border: "border-indigo-100", icon: "text-indigo-600", accent: "bg-indigo-500" },
     ];
     return colors[index % colors.length];
   };
@@ -140,7 +153,7 @@ const UserDashboard: React.FC = () => {
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             const colors = getStatColor(index);
@@ -169,14 +182,14 @@ const UserDashboard: React.FC = () => {
           })}
         </div>
 
-        {data.length > 0 && (
+        {upcomingEvents.length > 0 && (
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
-            <CardHeader className="border-b border-gray-100/50 bg-white/30">
+            <CardHeader className="border-b border-gray-100/50 bg-gray-50/30">
               <CardTitle className="text-2xl font-bold flex items-center text-gray-800">
                 <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
-                  <Eye className="h-5 w-5 text-white" />
+                  <Calendar className="h-5 w-5 text-white" />
                 </div>
-                {user?.role === "exhibitor" ? "Your Stalls" : "Your Favorites"}
+                Upcoming Events
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -184,47 +197,78 @@ const UserDashboard: React.FC = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50/50">
-                      {user?.role === "exhibitor" ? (
-                        <>
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Stall Number</th>
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Hall</th>
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th>
-                        </>
-                      ) : (
-                        <>
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Name</th>
-                          <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Type</th>
-                        </>
-                      )}
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Event Name</th>
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Date</th>
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Time</th>
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Venue</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {data.map((item, index) => (
+                    {upcomingEvents.map((event: Event) => (
+                      <tr key={event._id} className="hover:bg-blue-50/30">
+                        <td className="py-4 px-6">
+                          <span className="font-medium text-gray-900">{event.name}</span>
+                          <p className="text-sm text-gray-600">{event.description || "No description"}</p>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-gray-700">{new Date(event.date).toLocaleDateString()}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-gray-700">
+                            {new Date(event.startTime).toLocaleTimeString()} - {new Date(event.endTime).toLocaleTimeString()}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="font-medium text-gray-900">{event.venue.name}</span>
+                          <p className="text-sm text-gray-600">{event.venue.address}</p>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {user?.role === "exhibitor" && stallApplications.length > 0 && (
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
+            <CardHeader className="border-b border-gray-100/50 bg-gray-50/30">
+              <CardTitle className="text-2xl font-bold flex items-center text-gray-800">
+                <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                  <Eye className="h-5 w-5 text-white" />
+                </div>
+                Your Stall Applications
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50/50">
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Stall Number</th>
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Event ID</th>
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th>
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Applied At</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {stallApplications.map((item: any, index: number) => (
                       <tr key={index} className="hover:bg-blue-50/30">
-                        {user?.role === "exhibitor" ? (
-                          <>
-                            <td className="py-4 px-6">
-                              <span className="font-medium text-gray-900">{item.stallNumber || "N/A"}</span>
-                            </td>
-                            <td className="py-4 px-6">
-                              <span className="font-medium text-gray-800">{item.hall || "N/A"}</span>
-                            </td>
-                            <td className="py-4 px-6">
-                              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(item.status)}`}>
-                                {item.status || "N/A"}
-                              </span>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="py-4 px-6">
-                              <span className="font-medium text-gray-900">{item.name || "N/A"}</span>
-                            </td>
-                            <td className="py-4 px-6">
-                              <span className="font-medium text-gray-800">{item.type || "N/A"}</span>
-                            </td>
-                          </>
-                        )}
+                        <td className="py-4 px-6">
+                          <span className="font-medium text-gray-900">{item.stallNumber || "N/A"}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="font-medium text-gray-800">{item.eventId || "N/A"}</span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(item.status)}`}>
+                            {item.status || "N/A"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-gray-700">{new Date(item.appliedAt).toLocaleString() || "N/A"}</span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

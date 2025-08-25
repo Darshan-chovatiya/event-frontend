@@ -16,6 +16,7 @@ interface Lead {
   status: string;
   leadModel: "Exhibitor" | "Visitor";
   capturedAt: string;
+  message?: string | null;
 }
 
 interface Stat {
@@ -170,19 +171,18 @@ const LeadsPage: React.FC = () => {
         )}
 
         {loading && (
-                        <div className="flex flex-col items-center space-y-4">
-                          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-                          <p className="text-gray-500 font-medium">Loading leads...</p>
-                        </div>
-                  )}
-          {leads.length === 0 && !loading && (
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
-              <CardContent className="p-6 text-center text-gray-600">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+            <p className="text-gray-500 font-medium">Loading leads...</p>
+          </div>
+        )}
+        {leads.length === 0 && !loading && (
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
+            <CardContent className="p-6 text-center text-gray-600">
               No leads found.
-              </CardContent>
-
-            </Card>
-          )}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
           {stats.map((stat, index) => {
@@ -232,8 +232,9 @@ const LeadsPage: React.FC = () => {
                       <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Email</th>
                       <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Company</th>
                       <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Type</th>
-                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th>
+                      {/* <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Status</th> */}
                       <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Captured At</th>
+                      <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 uppercase tracking-wider">Message</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -251,15 +252,18 @@ const LeadsPage: React.FC = () => {
                         <td className="py-4 px-6">
                           <span className="font-medium text-gray-800">{lead.leadModel || "N/A"}</span>
                         </td>
-                        <td className="py-4 px-6">
+                        {/* <td className="py-4 px-6">
                           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(lead.status)}`}>
                             {lead.status || "N/A"}
                           </span>
-                        </td>
+                        </td> */}
                         <td className="py-4 px-6">
                           <span className="font-medium text-gray-800">
                             {new Date(lead.capturedAt).toLocaleDateString() || "N/A"}
                           </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="font-medium text-gray-800">{lead.message || "No message"}</span>
                         </td>
                       </tr>
                     ))}

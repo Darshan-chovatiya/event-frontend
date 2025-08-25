@@ -1,5 +1,5 @@
-export const BaseUrl = "https://event.itfuturz.in"
-// export const BaseUrl = "http://localhost:3100"
+// export const BaseUrl = "https://event.itfuturz.in"
+export const BaseUrl = "http://localhost:3100"
 
 
 

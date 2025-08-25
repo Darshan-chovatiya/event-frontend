@@ -319,329 +319,355 @@ const UserProfile: React.FC = () => {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div className="xl:col-span-2">
-            <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-xl rounded-3xl overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5"></div>
-              <CardHeader className="relative bg-gradient-to-r from-blue-50/80 to-purple-50/80 border-b border-gray-100/50">
-                <CardTitle className="text-2xl font-bold flex items-center text-gray-800">
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mr-4 shadow-lg">
-                    <User className="h-6 w-6 text-white" />
+          <Card className="border-0 shadow-2xl bg-white/70 backdrop-blur-xl rounded-3xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5"></div>
+            
+            {/* Cover Image Section - Top */}
+            <div className="relative h-48 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 overflow-hidden">
+              {coverImagePreview ? (
+                <img 
+                  src={coverImagePreview} 
+                  alt="Cover Preview" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500">
+                  <div className="text-center text-white/80">
+                    <Camera className="h-12 w-12 mx-auto mb-2 opacity-60" />
+                    <p className="text-sm font-medium">Upload Cover Image</p>
                   </div>
-                  Profile Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-6">
+                </div>
+              )}
+              
+              {/* Cover Image Upload Button */}
+              <div className="absolute top-4 right-4">
+                <Label htmlFor="coverImage" className="cursor-pointer">
+                  <div className="bg-white/20 backdrop-blur-md rounded-full p-3 hover:bg-white/30 transition-all duration-200 border border-white/30">
+                    <Camera className="h-5 w-5 text-white" />
+                  </div>
+                </Label>
+                <Input
+                  id="coverImage"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'cover')}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {/* Profile Image Section - Overlapping Cover */}
+            <div className="relative -mt-16 flex justify-center">
+              <div className="relative">
+                {profileImagePreview ? (
+                  <img 
+                    src={profileImagePreview} 
+                    alt="Profile Preview" 
+                    className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-xl bg-white"
+                  />
+                ) : (
+                  <div className="h-32 w-32 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 border-4 border-white shadow-xl flex items-center justify-center">
+                    <User className="h-12 w-12 text-gray-400" />
+                  </div>
+                )}
+                
+                {/* Profile Image Upload Button */}
+                <Label htmlFor="profileImage" className="cursor-pointer">
+                  <div className="absolute bottom-2 right-2 bg-blue-500 rounded-full p-2 hover:bg-blue-600 transition-all duration-200 shadow-lg border-2 border-white">
+                    <Camera className="h-4 w-4 text-white" />
+                  </div>
+                </Label>
+                <Input
+                  id="profileImage"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'profile')}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            <CardHeader className="relative bg-gradient-to-r from-blue-50/80 to-purple-50/80 border-b border-gray-100/50 pt-6">
+              <CardTitle className="text-2xl font-bold flex items-center text-gray-800 justify-center">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mr-4 shadow-lg">
+                  <User className="h-6 w-6 text-white" />
+                </div>
+                Profile Information
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="relative p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="name" className="text-sm font-semibold text-gray-700 flex items-center">
+                      <User className="h-4 w-4 mr-2 text-blue-500" />
+                      Full Name
+                    </Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="email" className="text-sm font-semibold text-gray-700 flex items-center">
+                      <Mail className="h-4 w-4 mr-2 text-purple-500" />
+                      Email Address
+                    </Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="h-12 rounded-xl border-gray-200 focus:border-purple-400 focus:ring-purple-400/20 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="mobile" className="text-sm font-semibold text-gray-700 flex items-center">
+                      <Phone className="h-4 w-4 mr-2 text-green-500" />
+                      Mobile Number
+                    </Label>
+                    <Input
+                      id="mobile"
+                      name="mobile"
+                      type="tel"
+                      value={formData.mobile}
+                      onChange={handleInputChange}
+                      className="h-12 rounded-xl border-gray-200 focus:border-green-400 focus:ring-green-400/20 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="designation" className="text-sm font-semibold text-gray-700 flex items-center">
+                      <Building2 className="h-4 w-4 mr-2 text-indigo-500" />
+                      Designation
+                    </Label>
+                    <Input
+                      id="designation"
+                      name="designation"
+                      type="text"
+                      value={formData.designation}
+                      onChange={handleInputChange}
+                      className="h-12 rounded-xl border-gray-200 focus:border-indigo-400 focus:ring-indigo-400/20 transition-all duration-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {user?.role === "exhibitor" && (
                     <div className="space-y-3">
-                      <Label htmlFor="name" className="text-sm font-semibold text-gray-700 flex items-center">
-                        <User className="h-4 w-4 mr-2 text-blue-500" />
-                        Full Name
+                      <Label htmlFor="companyName" className="text-sm font-semibold text-gray-700 flex items-center">
+                        <Building2 className="h-4 w-4 mr-2 text-blue-500" />
+                        Company Name
                       </Label>
                       <Input
-                        id="name"
-                        name="name"
+                        id="companyName"
+                        name="companyName"
                         type="text"
-                        value={formData.name}
+                        value={formData.companyName}
                         onChange={handleInputChange}
                         className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
                       />
                     </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="email" className="text-sm font-semibold text-gray-700 flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-purple-500" />
-                        Email Address
-                      </Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="h-12 rounded-xl border-gray-200 focus:border-purple-400 focus:ring-purple-400/20 transition-all duration-200"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="mobile" className="text-sm font-semibold text-gray-700 flex items-center">
-                        <Phone className="h-4 w-4 mr-2 text-green-500" />
-                        Mobile Number
-                      </Label>
-                      <Input
-                        id="mobile"
-                        name="mobile"
-                        type="tel"
-                        value={formData.mobile}
-                        onChange={handleInputChange}
-                        className="h-12 rounded-xl border-gray-200 focus:border-green-400 focus:ring-green-400/20 transition-all duration-200"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="designation" className="text-sm font-semibold text-gray-700 flex items-center">
-                        <Building2 className="h-4 w-4 mr-2 text-indigo-500" />
-                        Designation
-                      </Label>
-                      <Input
-                        id="designation"
-                        name="designation"
-                        type="text"
-                        value={formData.designation}
-                        onChange={handleInputChange}
-                        className="h-12 rounded-xl border-gray-200 focus:border-indigo-400 focus:ring-indigo-400/20 transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    {user?.role === "exhibitor" && (
-                      <div className="space-y-3">
-                        <Label htmlFor="companyName" className="text-sm font-semibold text-gray-700 flex items-center">
-                          <Building2 className="h-4 w-4 mr-2 text-blue-500" />
-                          Company Name
-                        </Label>
-                        <Input
-                          id="companyName"
-                          name="companyName"
-                          type="text"
-                          value={formData.companyName}
-                          onChange={handleInputChange}
-                          className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
-                        />
-                      </div>
-                    )}
-
-                    <div className="space-y-3">
-                      <Label htmlFor="companyWebsite" className="text-sm font-semibold text-gray-700 flex items-center">
-                        <Globe className="h-4 w-4 mr-2 text-purple-500" />
-                        Company Website
-                      </Label>
-                      <Input
-                        id="companyWebsite"
-                        name="companyWebsite"
-                        type="url"
-                        value={formData.companyWebsite}
-                        onChange={handleInputChange}
-                        className="h-12 rounded-xl border-gray-200 focus:border-purple-400 focus:ring-purple-400/20 transition-all duration-200"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="focusSector" className="text-sm font-semibold text-gray-700 flex items-center">
-                        <Target className="h-4 w-4 mr-2 text-orange-500" />
-                        Focus Sector
-                      </Label>
-                      <Input
-                        id="focusSector"
-                        name="focusSector"
-                        type="text"
-                        value={formData.focusSector}
-                        onChange={handleInputChange}
-                        className="h-12 rounded-xl border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 transition-all duration-200"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="bio" className="text-sm font-semibold text-gray-700 flex items-center">
-                        <FileText className="h-4 w-4 mr-2 text-green-500" />
-                        Bio
-                      </Label>
-                      <Input
-                        id="bio"
-                        name="bio"
-                        type="text"
-                        value={formData.bio}
-                        onChange={handleInputChange}
-                        className="h-12 rounded-xl border-gray-200 focus:border-green-400 focus:ring-green-400/20 transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <Label htmlFor="keywords" className="text-sm font-semibold text-gray-700 flex items-center">
-                        <Tag className="h-4 w-4 mr-2 text-blue-500" />
-                        Keywords (comma-separated)
-                      </Label>
-                      <Input
-                        id="keywords"
-                        name="keywords"
-                        type="text"
-                        value={formData.keywords}
-                        onChange={handleInputChange}
-                        className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label htmlFor="insights" className="text-sm font-semibold text-gray-700 flex items-center">
-                        <Lightbulb className="h-4 w-4 mr-2 text-yellow-500" />
-                        Insights
-                      </Label>
-                      <Input
-                        id="insights"
-                        name="insights"
-                        type="text"
-                        value={formData.insights}
-                        onChange={handleInputChange}
-                        className="h-12 rounded-xl border-gray-200 focus:border-yellow-400 focus:ring-yellow-400/20 transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 rounded-2xl p-6 border border-blue-100/50">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                      <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg mr-3">
-                        <Globe className="h-4 w-4 text-white" />
-                      </div>
-                      Social Media Links
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="facebook" className="text-sm font-semibold text-gray-700 flex items-center">
-                          <Facebook className="h-4 w-4 mr-2 text-blue-600" />
-                          Facebook
-                        </Label>
-                        <Input
-                          id="facebook"
-                          name="facebook"
-                          type="url"
-                          value={formData.facebook}
-                          onChange={handleInputChange}
-                          className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="twitter" className="text-sm font-semibold text-gray-700 flex items-center">
-                          <Twitter className="h-4 w-4 mr-2 text-sky-500" />
-                          Twitter
-                        </Label>
-                        <Input
-                          id="twitter"
-                          name="twitter"
-                          type="url"
-                          value={formData.twitter}
-                          onChange={handleInputChange}
-                          className="h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-sky-400/20 transition-all duration-200"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="linkedin" className="text-sm font-semibold text-gray-700 flex items-center">
-                          <Linkedin className="h-4 w-4 mr-2 text-blue-700" />
-                          LinkedIn
-                        </Label>
-                        <Input
-                          id="linkedin"
-                          name="linkedin"
-                          type="url"
-                          value={formData.linkedin}
-                          onChange={handleInputChange}
-                          className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-r from-purple-50/50 to-indigo-50/50 rounded-2xl p-6 border border-purple-100/50">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                      <div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg mr-3">
-                        <Camera className="h-4 w-4 text-white" />
-                      </div>
-                      Image Uploads
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-3">
-                        <Label htmlFor="profileImage" className="text-sm font-semibold text-gray-700 flex items-center">
-                          <User className="h-4 w-4 mr-2 text-blue-500" />
-                          Profile Image
-                        </Label>
-                        {profileImagePreview && (
-                          <div className="mb-2">
-                            <img 
-                              src={profileImagePreview} 
-                              alt="Profile Preview" 
-                              className="h-24 w-24 rounded-full object-cover border-2 border-white shadow-lg mx-auto"
-                            />
-                          </div>
-                        )}
-                        <Input
-                          id="profileImage"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileChange(e, 'profile')}
-                          className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
-                        />
-                      </div>
-                      
-                      <div className="space-y-3">
-                        <Label htmlFor="coverImage" className="text-sm font-semibold text-gray-700 flex items-center">
-                          <Camera className="h-4 w-4 mr-2 text-purple-500" />
-                          Cover Image
-                        </Label>
-                        {coverImagePreview && (
-                          <div className="mb-2">
-                            <img 
-                              src={coverImagePreview} 
-                              alt="Cover Preview" 
-                              className="h-20 w-full rounded-lg object-cover border-2 border-white shadow-lg"
-                            />
-                          </div>
-                        )}
-                        <Input
-                          id="coverImage"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileChange(e, 'cover')}
-                          className="h-12 rounded-xl border-gray-200 focus:border-purple-400 focus:ring-purple-400/20 transition-all duration-200"
-                        />
-                      </div>
-                      
-                      {user?.role === "exhibitor" && (
-                        <div className="space-y-3">
-                          <Label htmlFor="companyLogo" className="text-sm font-semibold text-gray-700 flex items-center">
-                            <Building2 className="h-4 w-4 mr-2 text-indigo-500" />
-                            Company Logo
-                          </Label>
-                          {companyLogoPreview && (
-                            <div className="mb-2">
-                              <img 
-                                src={companyLogoPreview} 
-                                alt="Company Logo Preview" 
-                                className="h-24 w-24 rounded-lg object-contain border-2 border-white shadow-lg mx-auto bg-white p-1"
-                              />
-                            </div>
-                          )}
-                          <Input
-                            id="companyLogo"
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleFileChange(e, 'logo')}
-                            className="h-12 rounded-xl border-gray-200 focus:border-indigo-400 focus:ring-indigo-400/20 transition-all duration-200"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleUpdateProfile}
-                  disabled={isLoading}
-                  className="w-full mt-8 h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                      Updating Profile...
-                    </div>
-                  ) : (
-                    "Update Profile"
                   )}
-                </Button>
-              </CardContent>
-            </Card>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="companyWebsite" className="text-sm font-semibold text-gray-700 flex items-center">
+                      <Globe className="h-4 w-4 mr-2 text-purple-500" />
+                      Company Website
+                    </Label>
+                    <Input
+                      id="companyWebsite"
+                      name="companyWebsite"
+                      type="url"
+                      value={formData.companyWebsite}
+                      onChange={handleInputChange}
+                      className="h-12 rounded-xl border-gray-200 focus:border-purple-400 focus:ring-purple-400/20 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="focusSector" className="text-sm font-semibold text-gray-700 flex items-center">
+                      <Target className="h-4 w-4 mr-2 text-orange-500" />
+                      Focus Sector
+                    </Label>
+                    <Input
+                      id="focusSector"
+                      name="focusSector"
+                      type="text"
+                      value={formData.focusSector}
+                      onChange={handleInputChange}
+                      className="h-12 rounded-xl border-gray-200 focus:border-orange-400 focus:ring-orange-400/20 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="bio" className="text-sm font-semibold text-gray-700 flex items-center">
+                      <FileText className="h-4 w-4 mr-2 text-green-500" />
+                      Bio
+                    </Label>
+                    <Input
+                      id="bio"
+                      name="bio"
+                      type="text"
+                      value={formData.bio}
+                      onChange={handleInputChange}
+                      className="h-12 rounded-xl border-gray-200 focus:border-green-400 focus:ring-green-400/20 transition-all duration-200"
+                    />
+                  </div>
+
+                  {/* Company Logo Section - Enhanced for Exhibitors */}
+                  {user?.role === "exhibitor" && (
+                    <div className="bg-gradient-to-r from-indigo-50/50 to-blue-50/50 rounded-2xl p-4 border border-indigo-100/50">
+                      <Label htmlFor="companyLogo" className="text-sm font-semibold text-gray-700 flex items-center mb-3">
+                        <Building2 className="h-4 w-4 mr-2 text-indigo-500" />
+                        Company Logo
+                      </Label>
+                      <div className="flex flex-col items-center space-y-3">
+                        {companyLogoPreview ? (
+                          <div className="relative">
+                            <img 
+                              src={companyLogoPreview} 
+                              alt="Company Logo Preview" 
+                              className="h-20 w-20 rounded-xl object-contain border-2 border-white shadow-lg bg-white p-2"
+                            />
+                            <Label htmlFor="companyLogo" className="cursor-pointer">
+                              <div className="absolute -bottom-1 -right-1 bg-indigo-500 rounded-full p-2 hover:bg-indigo-600 transition-all duration-200 shadow-lg border-2 border-white">
+                                <Camera className="h-3 w-3 text-white" />
+                              </div>
+                            </Label>
+                          </div>
+                        ) : (
+                          <Label htmlFor="companyLogo" className="cursor-pointer">
+                            <div className="h-20 w-20 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-100 border-2 border-dashed border-indigo-300 flex items-center justify-center hover:from-indigo-200 hover:to-blue-200 transition-all duration-200">
+                              <Building2 className="h-8 w-8 text-indigo-400" />
+                            </div>
+                          </Label>
+                        )}
+                        <Input
+                          id="companyLogo"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileChange(e, 'logo')}
+                          className="hidden"
+                        />
+                        <p className="text-xs text-gray-500 text-center">Upload company logo</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="keywords" className="text-sm font-semibold text-gray-700 flex items-center">
+                      <Tag className="h-4 w-4 mr-2 text-blue-500" />
+                      Keywords (comma-separated)
+                    </Label>
+                    <Input
+                      id="keywords"
+                      name="keywords"
+                      type="text"
+                      value={formData.keywords}
+                      onChange={handleInputChange}
+                      className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="insights" className="text-sm font-semibold text-gray-700 flex items-center">
+                      <Lightbulb className="h-4 w-4 mr-2 text-yellow-500" />
+                      Insights
+                    </Label>
+                    <Input
+                      id="insights"
+                      name="insights"
+                      type="text"
+                      value={formData.insights}
+                      onChange={handleInputChange}
+                      className="h-12 rounded-xl border-gray-200 focus:border-yellow-400 focus:ring-yellow-400/20 transition-all duration-200"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-blue-50/50 to-purple-50/50 rounded-2xl p-6 border border-blue-100/50">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg mr-3">
+                      <Globe className="h-4 w-4 text-white" />
+                    </div>
+                    Social Media Links
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="facebook" className="text-sm font-semibold text-gray-700 flex items-center">
+                        <Facebook className="h-4 w-4 mr-2 text-blue-600" />
+                        Facebook
+                      </Label>
+                      <Input
+                        id="facebook"
+                        name="facebook"
+                        type="url"
+                        value={formData.facebook}
+                        onChange={handleInputChange}
+                        className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="twitter" className="text-sm font-semibold text-gray-700 flex items-center">
+                        <Twitter className="h-4 w-4 mr-2 text-sky-500" />
+                        Twitter
+                      </Label>
+                      <Input
+                        id="twitter"
+                        name="twitter"
+                        type="url"
+                        value={formData.twitter}
+                        onChange={handleInputChange}
+                        className="h-12 rounded-xl border-gray-200 focus:border-sky-400 focus:ring-sky-400/20 transition-all duration-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedin" className="text-sm font-semibold text-gray-700 flex items-center">
+                        <Linkedin className="h-4 w-4 mr-2 text-blue-700" />
+                        LinkedIn
+                      </Label>
+                      <Input
+                        id="linkedin"
+                        name="linkedin"
+                        type="url"
+                        value={formData.linkedin}
+                        onChange={handleInputChange}
+                        className="h-12 rounded-xl border-gray-200 focus:border-blue-400 focus:ring-blue-400/20 transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleUpdateProfile}
+                disabled={isLoading}
+                className="w-full mt-8 h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    Updating Profile...
+                  </div>
+                ) : (
+                  "Update Profile"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
           </div>
           <div className="space-y-8">
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm max-w-lg rounded-2xl">
