@@ -67,6 +67,7 @@ interface Event {
   schedules: { date: string | null; activities: { startTime: string; endTime: string; title: string; description: string }[] }[];
   mapUrl?: string;
   floorPlanUrl?: string;
+  foodCouponTotal?: number;
 }
 
 interface Sponsor {
@@ -128,6 +129,7 @@ const Events: React.FC = () => {
     facebook: "",
     twitter: "",
     linkdin: "",
+    foodCouponTotal: "",
     map: null as File | null,
     floor: null as File | null,
   });
@@ -505,6 +507,15 @@ const Events: React.FC = () => {
           delete errors.linkdin;
         }
         break;
+      case "foodCouponTotal":
+        if (!value.trim()) {
+          errors.foodCouponTotal = "Food coupon total is required";
+        } else if (isNaN(Number(value)) || Number(value) < 0) {
+          errors.foodCouponTotal = "Must be a non-negative number";
+        } else {
+          delete errors.foodCouponTotal;
+        }
+        break;
       case "map":
         if (!currentEvent && !value) {
           errors.map = "Map image is required";
@@ -550,6 +561,12 @@ const Events: React.FC = () => {
 
     if (formData.startTime && formData.endTime && formData.startTime >= formData.endTime) {
       errors.endTime = "End time must be after start time";
+    }
+
+    if (!formData.foodCouponTotal.trim()) {
+      errors.foodCouponTotal = "Food coupon total is required";
+    } else if (isNaN(Number(formData.foodCouponTotal)) || Number(formData.foodCouponTotal) < 0) {
+      errors.foodCouponTotal = "Must be a non-negative number";
     }
 
     if (!currentEvent) {
@@ -728,6 +745,7 @@ const Events: React.FC = () => {
       eventForm.append("facebook", formData.facebook);
       eventForm.append("twitter", formData.twitter);
       eventForm.append("linkdin", formData.linkdin);
+      eventForm.append("foodCouponTotal", formData.foodCouponTotal);
       if (formData.map) eventForm.append("map", formData.map);
       if (formData.floor) eventForm.append("floor", formData.floor);
 
@@ -856,6 +874,7 @@ const Events: React.FC = () => {
         facebook: "",
         twitter: "",
         linkdin: "",
+        foodCouponTotal: "",
         map: null,
         floor: null,
       });
@@ -894,6 +913,7 @@ const Events: React.FC = () => {
         facebook: event.socialMedia.facebook || "",
         twitter: event.socialMedia.twitter || "",
         linkdin: event.socialMedia.linkdin || "",
+        foodCouponTotal: event.foodCouponTotal?.toString() || "",
         map: null,
         floor: null,
       });
@@ -911,6 +931,7 @@ const Events: React.FC = () => {
         facebook: "",
         twitter: "",
         linkdin: "",
+        foodCouponTotal: "",
         map: null,
         floor: null,
       });
@@ -1040,6 +1061,20 @@ const Events: React.FC = () => {
                                 className={`h-12 rounded-xl border-2 transition-all duration-200 ${formErrors.endTime ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-blue-500"} focus:ring-4 focus:ring-blue-500/20`}
                               />
                             </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="foodCouponTotal" className="text-gray-700 font-semibold flex items-center">
+                              Food Coupon Total <span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            <Input
+                              id="foodCouponTotal"
+                              type="number"
+                              value={formData.foodCouponTotal}
+                              onChange={handleInputChange}
+                              placeholder="Enter total food coupons"
+                              className={`h-12 rounded-xl border-2 transition-all duration-200 ${formErrors.foodCouponTotal ? "border-red-300 focus:border-red-500" : "border-gray-200 focus:border-blue-500"} focus:ring-4 focus:ring-blue-500/20`}
+                              min="0"
+                            />
                           </div>
                         </div>
                         <div className="bg-emerald-50/50 rounded-xl p-4 space-y-4">
@@ -1479,7 +1514,7 @@ const Events: React.FC = () => {
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="w-[95vw] max-w-[800px] max-h-[90vh] overflow-hidden rounded-3xl border shadow-2xl ring-1 ring-gray-200/50">
           <DialogHeader className="px-8 py-6 bg-gray-100 rounded-t-3xl -mx-6 -mt-6">
-            <DialogTitle className="text-2xl font-bold flex items-center">
+            <DialogTitle className="text-2xl font-bold flex items-center text-gray-900">
               <div className="h-10 w-10 bg-black/20 backdrop-blur-sm rounded-xl flex items-center justify-center mr-4 ring-2 ring-white/30">
                 <Eye className="h-5 w-5 text-white" />
               </div>
@@ -1521,6 +1556,10 @@ const Events: React.FC = () => {
                       <p className="text-gray-900 font-semibold mt-1">{formatTimeForDisplay(currentViewEvent?.endTime || '')}</p>
                     </div>
                   </div>
+                </div>
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Food Coupon Total</label>
+                  <p className="text-gray-900 font-semibold mt-1">{currentViewEvent?.foodCoupon?.total ?? 'Not set'}</p>
                 </div>
               </div>
 

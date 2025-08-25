@@ -484,22 +484,6 @@ const Stalls: React.FC = () => {
         </Card>
       )}
 
-      {/* Alerts */}
-      <div className="space-y-4">
-        {error && (
-          <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
-            <AlertCircle className="h-5 w-5" />
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
-        )}
-        {success && (
-          <Alert variant="default" className="border-0 shadow-lg bg-green-50/80 backdrop-blur-sm rounded-xl border-green-200">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
-          </Alert>
-        )}
-      </div>
-
       {/* Stalls List */}
       {activeTab === "stalls" && (
         <div className="space-y-4">

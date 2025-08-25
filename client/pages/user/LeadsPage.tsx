@@ -157,19 +157,6 @@ const LeadsPage: React.FC = () => {
           </div>
         </div>
 
-        {error && (
-          <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
-            <AlertCircle className="h-5 w-5" />
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
-        )}
-        {success && (
-          <Alert variant="default" className="border-0 shadow-lg bg-green-50/80 backdrop-blur-sm rounded-xl">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
-          </Alert>
-        )}
-
         {loading && (
           <div className="flex flex-col items-center space-y-4">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>

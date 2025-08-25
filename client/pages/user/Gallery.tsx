@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Image, AlertCircle, CheckCircle, Upload, Trash2 } from "lucide-react";
+import { Image, AlertCircle, CheckCircle, Upload, Trash2, FileText } from "lucide-react";
 import { BaseUrl } from "@/sevice/Url";
 import Swal from "sweetalert2";
 
@@ -26,13 +26,24 @@ const Gallery: React.FC = () => {
   const [description, setDescription] = useState("");
   const [uploading, setUploading] = useState(false);
 
+  const toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 3000,
+    width: "320px",
+  });
+
   const fetchGalleryImages = async () => {
     setError("");
     setSuccess("");
     setLoading(true);
 
     if (!user) {
-      setError("User not authenticated");
+      toast.fire({
+        icon: "error",
+        title: "User not authenticated",
+      });
       setLoading(false);
       return;
     }
@@ -67,9 +78,15 @@ const Gallery: React.FC = () => {
           uploadDate: img.uploadDate,
         }))
       );
-      setSuccess("Gallery images loaded successfully");
+      toast.fire({
+        icon: "success",
+        title: "Gallery images loaded successfully",
+      });
     } catch (err: any) {
-      setError(err.message || "Failed to fetch gallery images. Please try again.");
+      toast.fire({
+        icon: "error",
+        title: err.message || "Failed to fetch gallery images. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -83,7 +100,10 @@ const Gallery: React.FC = () => {
 
   const handleUpload = async () => {
     if (!file) {
-      setError("Please select an image to upload");
+      toast.fire({
+        icon: "error",
+        title: "Please select an image to upload",
+      });
       return;
     }
 
@@ -115,12 +135,18 @@ const Gallery: React.FC = () => {
       }
 
       await response.json();
-      setSuccess("Image uploaded successfully");
+      toast.fire({
+        icon: "success",
+        title: "Image uploaded successfully",
+      });
       setFile(null);
       setDescription("");
       fetchGalleryImages(); // Refresh gallery
     } catch (err: any) {
-      setError(err.message || "Failed to upload image. Please try again.");
+      toast.fire({
+        icon: "error",
+        title: err.message || "Failed to upload image. Please try again.",
+      });
     } finally {
       setUploading(false);
     }
@@ -157,10 +183,16 @@ const Gallery: React.FC = () => {
             throw new Error(errorData.message || "Failed to delete image");
           }
 
-          setSuccess("Image deleted successfully");
+          toast.fire({
+            icon: "success",
+            title: "Image deleted successfully",
+          });
           fetchGalleryImages(); // Refresh gallery
         } catch (err: any) {
-          setError(err.message || "Failed to delete image. Please try again.");
+          toast.fire({
+            icon: "error",
+            title: err.message || "Failed to delete image. Please try again.",
+          });
         }
       }
     });
@@ -186,61 +218,73 @@ const Gallery: React.FC = () => {
         </div>
 
         {/* Upload Form */}
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">
-          <CardHeader className="border-b border-gray-100/50 bg-gray-50/30">
+        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-gray-100/50 bg-gradient-to-r from-gray-50/50 to-gray-100/30">
             <CardTitle className="text-2xl font-bold flex items-center text-gray-800">
-              <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+              <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3 shadow-md">
                 <Upload className="h-5 w-5 text-white" />
               </div>
               Upload New Image
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="image" className="text-gray-700 font-medium">Select Image</Label>
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="mt-1 bg-white/50 border-gray-200 rounded-xl"
-                />
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-end">
+              {/* File Upload Section */}
+              <div className="flex-1 min-w-0">
+                <Label htmlFor="image" className="text-sm font-semibold text-gray-700 flex items-center mb-2">
+                  <Upload className="h-4 w-4 mr-2 text-indigo-500" />
+                  Select Image
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="h-12 bg-white/70 border-gray-200 rounded-xl focus:border-indigo-400 focus:ring-indigo-400/20 transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="description" className="text-gray-700 font-medium">Description (Optional)</Label>
+
+              {/* Description Section */}
+              <div className="flex-1 min-w-0">
+                <Label htmlFor="description" className="text-sm font-semibold text-gray-700 flex items-center mb-2">
+                  <FileText className="h-4 w-4 mr-2 text-purple-500" />
+                  Description (Optional)
+                </Label>
                 <Input
                   id="description"
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter image description"
-                  className="mt-1 bg-white/50 border-gray-200 rounded-xl"
+                  placeholder="Enter image description..."
+                  className="h-12 bg-white/70 border-gray-200 rounded-xl focus:border-purple-400 focus:ring-purple-400/20 transition-all duration-200 placeholder:text-gray-400"
                 />
               </div>
-              <Button
-                onClick={handleUpload}
-                disabled={uploading || !file}
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl"
-              >
-                {uploading ? "Uploading..." : "Upload Image"}
-              </Button>
+
+              {/* Upload Button Section */}
+              <div className="flex-shrink-0">
+                <Button
+                  onClick={handleUpload}
+                  disabled={uploading || !file}
+                  className="h-12 px-8 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:transform-none disabled:cursor-not-allowed min-w-[140px]"
+                >
+                  {uploading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                      Uploading...
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Image
+                    </div>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
-
-        {error && (
-          <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
-            <AlertCircle className="h-5 w-5" />
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
-        )}
-        {success && (
-          <Alert variant="default" className="border-0 shadow-lg bg-green-50/80 backdrop-blur-sm rounded-xl">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
-          </Alert>
-        )}
 
         {loading ? (
           <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm rounded-2xl">

@@ -13,6 +13,8 @@ import {
   X,
   Bell,
   Image,
+  Package,
+  Briefcase,
 } from "lucide-react";
 import Swal from "sweetalert2";
 
@@ -27,6 +29,8 @@ const UserLayout: React.FC = () => {
     { name: "Exhibitors", href: "/user/exhibitors", icon: Building2 },
     { name: "Visitors", href: "/user/visitors", icon: Users },
     { name: "Leads", href: "/user/leads", icon: Users },
+    { name: "Products", href: "/user/products", icon: Package },
+    { name: "Services", href: "/user/services", icon: Briefcase },
     { name: "Gallery", href: "/user/gallery", icon: Image },
     { name: "Profile", href: "/user/profile", icon: User },
   ];

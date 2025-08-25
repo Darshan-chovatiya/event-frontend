@@ -9,10 +9,27 @@ import { User, KeyRound, Eye, EyeOff, CheckCircle, AlertCircle, Mail, Building2,
 import { AmazonAws, BaseUrl } from "@/sevice/Url";
 import { dataURLtoFile, generateQRCodeDataURL } from "./qrGenerator";
 import { QrCodeDisplay } from "./QrCodeDisplay";
+import Swal from "sweetalert2";
+
+interface FormData {
+  name: string;
+  email: string;
+  mobile: string;
+  companyName: string;
+  designation: string;
+  companyWebsite: string;
+  bio: string;
+  keywords: string;
+  insights: string;
+  facebook: string;
+  twitter: string;
+  linkedin: string;
+  focusSector: string;
+}
 
 const UserProfile: React.FC = () => {
   const { user, setUser } = useUserAuth();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     email: "",
     mobile: "",
@@ -42,6 +59,14 @@ const UserProfile: React.FC = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const toast = Swal.mixin({
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: 3000,
+    width: "320px",
+  });
 
   useEffect(() => {
     if (user) {
@@ -117,17 +142,26 @@ const UserProfile: React.FC = () => {
     if (user?.role === "exhibitor") {
       requiredFields.push('companyName');
       if (!profileImage && !user?.profileImage) {
-        setError("Profile Image is required for exhibitors");
+        toast.fire({
+          icon: "error",
+          title: "Profile Image is required for exhibitors",
+        });
         setIsLoading(false);
         return;
       }
       if (!coverImage && !user?.coverImage) {
-        setError("Cover Image is required for exhibitors");
+        toast.fire({
+          icon: "error",
+          title: "Cover Image is required for exhibitors",
+        });
         setIsLoading(false);
         return;
       }
       if (!companyLogo && !user?.companyLogo) {
-        setError("Company logo is required for exhibitors");
+        toast.fire({
+          icon: "error",
+          title: "Company logo is required for exhibitors",
+        });
         setIsLoading(false);
         return;
       }
@@ -135,7 +169,10 @@ const UserProfile: React.FC = () => {
 
     const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
     if (missingFields.length > 0) {
-      setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      toast.fire({
+        icon: "error",
+        title: `Please fill in all required fields: ${missingFields.join(', ')}`,
+      });
       setIsLoading(false);
       return;
     }
@@ -224,9 +261,15 @@ const UserProfile: React.FC = () => {
       setUser(updatedUserData);
       localStorage.setItem("userData", JSON.stringify(updatedUserData));
       
-      setSuccess("Profile updated successfully");
+      toast.fire({
+        icon: "success",
+        title: "Profile updated successfully",
+      });
     } catch (err: any) {
-      setError(err.message || "Failed to update profile. Please try again.");
+      toast.fire({
+        icon: "error",
+        title: err.message || "Failed to update profile. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -237,17 +280,26 @@ const UserProfile: React.FC = () => {
     setSuccess("");
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setError("Please fill in all password fields");
+      toast.fire({
+        icon: "error",
+        title: "Please fill in all password fields",
+      });
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("New password and confirm password do not match");
+      toast.fire({
+        icon: "error",
+        title: "New password and confirm password do not match",
+      });
       return;
     }
 
     if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters long");
+      toast.fire({
+        icon: "error",
+        title: "New password must be at least 8 characters long",
+      });
       return;
     }
 
@@ -272,12 +324,18 @@ const UserProfile: React.FC = () => {
         throw new Error(errorData.message || "Failed to change password");
       }
 
-      setSuccess("Password changed successfully");
+      toast.fire({
+        icon: "success",
+        title: "Password changed successfully",
+      });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
-      setError(err.message || "Failed to change password. Please try again.");
+      toast.fire({
+        icon: "error",
+        title: err.message || "Failed to change password. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -303,19 +361,6 @@ const UserProfile: React.FC = () => {
             </p>
           </div>
         </div>
-
-        {error && (
-          <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
-            <AlertCircle className="h-5 w-5" />
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
-        )}
-        {success && (
-          <Alert variant="default" className="border-0 shadow-lg bg-green-50/80 backdrop-blur-sm rounded-xl">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
-          </Alert>
-        )}
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           <div className="xl:col-span-2">
@@ -458,6 +503,45 @@ const UserProfile: React.FC = () => {
                       className="h-12 rounded-xl border-gray-200 focus:border-indigo-400 focus:ring-indigo-400/20 transition-all duration-200"
                     />
                   </div>
+                                    {/* Company Logo Section - Enhanced for Exhibitors */}
+                  {user?.role === "exhibitor" && (
+                    <div className="bg-gradient-to-r from-indigo-50/50 to-blue-50/50 rounded-2xl p-4 border border-indigo-100/50">
+                      <Label htmlFor="companyLogo" className="text-sm font-semibold text-gray-700 flex items-center mb-3">
+                        <Building2 className="h-4 w-4 mr-2 text-indigo-500" />
+                        Company Logo
+                      </Label>
+                      <div className="flex flex-col items-center space-y-3">
+                        {companyLogoPreview ? (
+                          <div className="relative">
+                            <img 
+                              src={companyLogoPreview} 
+                              alt="Company Logo Preview" 
+                              className="h-20 w-20 rounded-xl object-contain border-2 border-white shadow-lg bg-white p-2"
+                            />
+                            <Label htmlFor="companyLogo" className="cursor-pointer">
+                              <div className="absolute -bottom-1 -right-1 bg-indigo-500 rounded-full p-2 hover:bg-indigo-600 transition-all duration-200 shadow-lg border-2 border-white">
+                                <Camera className="h-3 w-3 text-white" />
+                              </div>
+                            </Label>
+                          </div>
+                        ) : (
+                          <Label htmlFor="companyLogo" className="cursor-pointer">
+                            <div className="h-20 w-20 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-100 border-2 border-dashed border-indigo-300 flex items-center justify-center hover:from-indigo-200 hover:to-blue-200 transition-all duration-200">
+                              <Building2 className="h-8 w-8 text-indigo-400" />
+                            </div>
+                          </Label>
+                        )}
+                        <Input
+                          id="companyLogo"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileChange(e, 'logo')}
+                          className="hidden"
+                        />
+                        <p className="text-xs text-gray-500 text-center">Upload company logo</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-6">
@@ -522,46 +606,6 @@ const UserProfile: React.FC = () => {
                       className="h-12 rounded-xl border-gray-200 focus:border-green-400 focus:ring-green-400/20 transition-all duration-200"
                     />
                   </div>
-
-                  {/* Company Logo Section - Enhanced for Exhibitors */}
-                  {user?.role === "exhibitor" && (
-                    <div className="bg-gradient-to-r from-indigo-50/50 to-blue-50/50 rounded-2xl p-4 border border-indigo-100/50">
-                      <Label htmlFor="companyLogo" className="text-sm font-semibold text-gray-700 flex items-center mb-3">
-                        <Building2 className="h-4 w-4 mr-2 text-indigo-500" />
-                        Company Logo
-                      </Label>
-                      <div className="flex flex-col items-center space-y-3">
-                        {companyLogoPreview ? (
-                          <div className="relative">
-                            <img 
-                              src={companyLogoPreview} 
-                              alt="Company Logo Preview" 
-                              className="h-20 w-20 rounded-xl object-contain border-2 border-white shadow-lg bg-white p-2"
-                            />
-                            <Label htmlFor="companyLogo" className="cursor-pointer">
-                              <div className="absolute -bottom-1 -right-1 bg-indigo-500 rounded-full p-2 hover:bg-indigo-600 transition-all duration-200 shadow-lg border-2 border-white">
-                                <Camera className="h-3 w-3 text-white" />
-                              </div>
-                            </Label>
-                          </div>
-                        ) : (
-                          <Label htmlFor="companyLogo" className="cursor-pointer">
-                            <div className="h-20 w-20 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-100 border-2 border-dashed border-indigo-300 flex items-center justify-center hover:from-indigo-200 hover:to-blue-200 transition-all duration-200">
-                              <Building2 className="h-8 w-8 text-indigo-400" />
-                            </div>
-                          </Label>
-                        )}
-                        <Input
-                          id="companyLogo"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileChange(e, 'logo')}
-                          className="hidden"
-                        />
-                        <p className="text-xs text-gray-500 text-center">Upload company logo</p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -776,7 +820,7 @@ const UserProfile: React.FC = () => {
             </Card>
 
             <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm max-w-lg rounded-2xl">
-              {/* <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div> */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
                 {user?.qrCode && (
                   <QrCodeDisplay 
                     qrCodeUrl={`${AmazonAws}/${user.qrCode}`} 

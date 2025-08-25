@@ -140,19 +140,6 @@ const UserDashboard: React.FC = () => {
           </div>
         </div>
 
-        {error && (
-          <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
-            <AlertCircle className="h-5 w-5" />
-            <AlertDescription className="font-medium">{error}</AlertDescription>
-          </Alert>
-        )}
-        {success && (
-          <Alert variant="default" className="border-0 shadow-lg bg-green-50/80 backdrop-blur-sm rounded-xl">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
-          </Alert>
-        )}
-
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {stats.map((stat, index) => {
             const Icon = stat.icon;

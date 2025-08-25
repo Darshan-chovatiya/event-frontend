@@ -209,7 +209,7 @@ const ExhibitorPage: React.FC = () => {
           </div>
         </div>
 
-        {error && (
+        {/* {error && (
           <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
             <AlertCircle className="h-5 w-5" />
             <AlertDescription className="font-medium">{error}</AlertDescription>
@@ -220,7 +220,7 @@ const ExhibitorPage: React.FC = () => {
             <CheckCircle className="h-5 w-5 text-green-600" />
             <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
           </Alert>
-        )}
+        )} */}
 
         {loading && (
           <div className="flex flex-col items-center space-y-4">

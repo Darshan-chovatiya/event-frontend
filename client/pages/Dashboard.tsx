@@ -257,7 +257,7 @@ const Dashboard: React.FC = () => {
         </Card>
 
         {/* Enhanced Alerts */}
-        <div className="space-y-4">
+        {/* <div className="space-y-4">
           {error && (
             <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
               <AlertCircle className="h-5 w-5" />
@@ -270,7 +270,7 @@ const Dashboard: React.FC = () => {
               <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
             </Alert>
           )}
-        </div>
+        </div> */}
 
         {/* Enhanced Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">

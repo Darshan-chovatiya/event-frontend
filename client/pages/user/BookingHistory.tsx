@@ -148,20 +148,6 @@ const BookingHistory: React.FC = () => {
           </div>
         </div>
 
-        {/* Alerts */}
-        {error && (
-          <Alert className="mb-6 border-0 bg-red-50/80 backdrop-blur-sm rounded-2xl shadow-lg animate-in slide-in-from-top-4 duration-300">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <AlertDescription className="text-red-700 font-medium">{error}</AlertDescription>
-          </Alert>
-        )}
-        {success && (
-          <Alert className="mb-6 border-0 bg-emerald-50/80 backdrop-blur-sm rounded-2xl shadow-lg animate-in slide-in-from-top-4 duration-300">
-            <CheckCircle className="h-5 w-5 text-emerald-600" />
-            <AlertDescription className="text-emerald-700 font-medium">{success}</AlertDescription>
-          </Alert>
-        )}
-
         {/* Search and Filter Controls */}
         <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 border border-white/40 shadow-lg mb-8">
           <div className="flex flex-col lg:flex-row gap-4">

@@ -114,22 +114,6 @@ const Settings: React.FC = () => {
           </div>
         </div>
 
-        {/* Enhanced Alerts */}
-        <div className="space-y-4 ">
-          {error && (
-            <Alert variant="destructive" className="border-0 shadow-lg bg-red-50/80 backdrop-blur-sm rounded-xl">
-              <AlertCircle className="h-5 w-5" />
-              <AlertDescription className="font-medium">{error}</AlertDescription>
-            </Alert>
-          )}
-          {success && (
-            <Alert variant="default" className="border-0 shadow-lg bg-green-50/80 backdrop-blur-sm rounded-xl border-green-200">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
-            </Alert>
-          )}
-        </div>
-
         {/* Enhanced Form Card */}
         <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden rounded-2xl max-w-2xl">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>

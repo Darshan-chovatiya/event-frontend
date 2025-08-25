@@ -35,6 +35,8 @@ import ExhibitorPage from "./pages/user/ExhibitorPage";
 import VisitorPage from "./pages/user/VisitorPage";
 import LeadsPage from "./pages/user/LeadsPage";
 import Gallery from "./pages/user/Gallery";
+import Products from "./pages/user/Products";
+import Services from "./pages/user/Services";
 
 const queryClient = new QueryClient();
 
@@ -134,6 +136,8 @@ const App = () => (
                     <Route path="visitors" element={<VisitorPage />} />
                     <Route path="bookinghistory" element={<BookingHistory />} />
                     <Route path="leads" element={<LeadsPage />} />
+                    <Route path="products" element={<Products />} />
+                    <Route path="services" element={<Services />} />
                     <Route path="gallery" element={<Gallery />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
